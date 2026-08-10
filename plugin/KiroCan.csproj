@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Loupedeck.KiroCanPlugin</RootNamespace>
+    <AssemblyName>KiroCan</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="PluginApi">
+      <HintPath>C:\Program Files\Logi\LogiPluginService\PluginApi.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
