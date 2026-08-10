@@ -6,7 +6,7 @@ KiroCan connects a Logitech MX Creative Console to Kiro IDE on Windows through t
 
 ## Tasks
 
-- [ ] 1. Set up project structure and core interfaces
+- [x] 1. Set up project structure and core interfaces
   - [x] 1.1 Initialize the Bridge Node.js/TypeScript project
     - Create `bridge/package.json` with dependencies: express, koffi (Win32 FFI), node-clipboard (or equivalent)
     - Create `bridge/tsconfig.json` targeting ES2022 with strict mode
@@ -20,12 +20,12 @@ KiroCan connects a Logitech MX Creative Console to Kiro IDE on Windows through t
     - Add test project `plugin/tests/KiroCan.Tests.csproj` with xUnit and FsCheck.Xunit packages
     - _Requirements: 19.4, 19.5_
 
-  - [~] 1.3 Define shared TypeScript interfaces and types
+  - [x] 1.3 Define shared TypeScript interfaces and types
     - Create `bridge/src/types.ts` with `HealthResponse`, `BridgeInternalState`, `PromptRequest`, `ScreenRecordRequest`, `SuccessResponse`, `ErrorResponse`, `ActionResult` interfaces
     - Define `VirtualKey` type and key constants
     - _Requirements: 18.2, 18.3, 22.1_
 
-  - [~] 1.4 Define shared C# enums and models
+  - [x] 1.4 Define shared C# enums and models
     - Create `plugin/src/Models/BridgeState.cs` with `BridgeState` enum (Idle, Working)
     - Create `plugin/src/Models/HealthLevel.cs` with `HealthLevel` enum (Normal, Worried, Critical)
     - Create `plugin/src/Models/RotationDirection.cs` with `RotationDirection` enum (Undefined, Clockwise, CounterClockwise)
