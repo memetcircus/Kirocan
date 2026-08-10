@@ -56,8 +56,8 @@ KiroCan connects a Logitech MX Creative Console to Kiro IDE on Windows through t
     - Handle multiple Kiro windows by targeting most recently active
     - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.5, 21.6, 21.7_
 
-- [ ] 4. Implement Bridge keyboard simulator
-  - [ ] 4.1 Implement Win32 SendInput keyboard simulation
+- [x] 4. Implement Bridge keyboard simulator
+  - [x] 4.1 Implement Win32 SendInput keyboard simulation
     - Create `bridge/src/keyboard-simulator.ts` using koffi for Win32 SendInput
     - Implement `sendKeyCombo()` for modifier+key combinations (Ctrl+C, Ctrl+Shift+S, etc.)
     - Implement `typeText()` for typing arbitrary strings character-by-character
