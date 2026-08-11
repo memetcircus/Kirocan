@@ -1,0 +1,11 @@
+{
+  "version": "v1",
+  "hooks": [{
+    "name": "KiroCan Working Signal",
+    "trigger": "UserPromptSubmit",
+    "action": {
+      "type": "command",
+      "command": "curl -s --max-time 2 -X POST http://localhost:9848/hook/working"
+    }
+  }]
+}
