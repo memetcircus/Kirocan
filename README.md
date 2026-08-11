@@ -148,4 +148,4 @@ KiroCan/
 - **No external services** — fully offline, no internet required
 
 ## License
-UNLICENSED — Hackathon submission for Ready, Spec, Ship 2026.
+All Rights Reserved. See [LICENSE](./LICENSE) for details.
