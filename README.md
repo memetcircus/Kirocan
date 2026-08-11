@@ -39,6 +39,78 @@ MX Creative Console → C# Plugin (Logi Actions SDK, .NET 10) → HTTP → Bridg
 | Explain | Fix Bug | Optimize |
 | Review | Document | Simplify |
 
+## Ghost Animation — How It Works
+
+The 9 LCD buttons on the MX Creative Console form a unified **360×360px virtual canvas**. Each button displays a **120×120px tile** — when combined, they show a single animated ghost walking across the grid.
+
+### Canvas-to-Button Mapping
+
+```
+┌──────────────┬──────────────┬──────────────┐
+│   Tile 0     │   Tile 1     │   Tile 2     │  ← Row 0
+│  (120×120)   │  (120×120)   │  (120×120)   │
+├──────────────┼──────────────┼──────────────┤
+│   Tile 3     │   Tile 4     │   Tile 5     │  ← Row 1
+│  (120×120)   │  (120×120)   │  (120×120)   │
+├──────────────┼──────────────┼──────────────┤
+│   Tile 6     │   Tile 7     │   Tile 8     │  ← Row 2
+│  (120×120)   │  (120×120)   │  (120×120)   │
+└──────────────┴──────────────┴──────────────┘
+         = 360×360px unified canvas
+```
+
+### Tile-to-Button Assignment (Page 1)
+
+| Tile | Position | Button Function |
+|------|----------|-----------------|
+| 0 | Top-Left | Screenshot |
+| 1 | Top-Center | Be Honest |
+| 2 | Top-Right | Don't Code Yet |
+| 3 | Middle-Left | Show Options |
+| 4 | Middle-Center | Explain Why |
+| 5 | Middle-Right | Stop |
+| 6 | Bottom-Left | Keep Short |
+| 7 | Bottom-Center | No Tests |
+| 8 | Bottom-Right | Go! |
+
+### Animation Cycle
+
+1. Kiro starts working → Bridge sets state to "working" via hook
+2. Plugin polls `/health` every 500ms, detects "working" state
+3. AnimationEngine starts: loops through 30 frames at 10fps (100ms/frame)
+4. Each frame: ghost sprite (270×270px) is composited onto the 360×360 purple canvas at a calculated (x, y) position
+5. The canvas is split into 9 tiles of 120×120px
+6. Each tile is sent to the corresponding LCD button via `BitmapImage.FromArray(byte[])`
+7. All 9 buttons update simultaneously → appears as one large animation
+8. Kiro finishes → state becomes "idle" → animation stops, static icons restored
+
+### Walk Pattern (30 frames)
+
+- **Frames 0–14**: Ghost walks left → right (normal orientation)
+- **Frames 15–29**: Ghost walks right → left (horizontally mirrored)
+- **Vertical bob**: `sin(progress × 2π) × 6px` — gentle floating motion
+- **Background**: Solid `#9145fd` purple (matches icon backgrounds for seamless edges)
+
+### Context Health Variants
+
+| Health Level | Context Usage | Sprite Set | Animation Speed |
+|---|---|---|---|
+| Normal | 0–59% | `ghost-walk/` | 10fps (100ms/frame) |
+| Worried | 60–74% | `ghost-walk-worried/` | 15fps (67ms/frame) |
+| Critical | 75%+ | `ghost-walk-fire/` (flaming hair) | 20fps (50ms/frame) |
+
+### Sprite Generation
+
+Run `npm run build:sprites` to regenerate all animation tiles from the source PNGs:
+
+```bash
+npm install   # installs Jimp
+npm run build:sprites   # generates 810 tile PNGs (3 variants × 30 frames × 9 tiles)
+```
+
+Source files: `assets/normal.png`, `assets/worried.png`, `assets/onfire.png` (2048×2048 RGBA)
+Output: `assets/sprites/tiles/{ghost-walk,ghost-walk-worried,ghost-walk-fire}/frame-XX-tile-Y.png`
+
 ## Prerequisites
 - Windows 10/11
 - [Logitech MX Creative Console](https://www.logitech.com/products/keyboards/mx-creative-console.html)
