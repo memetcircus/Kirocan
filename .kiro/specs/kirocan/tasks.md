@@ -67,7 +67,7 @@ KiroCan connects a Logitech MX Creative Console to Kiro IDE on Windows through t
     - _Requirements: 21.5_
 
 - [ ] 5. Implement Bridge shortcut executor
-  - [ ] 5.1 Implement the shortcut executor orchestrator
+  - [x] 5.1 Implement the shortcut executor orchestrator
     - Create `bridge/src/shortcut-executor.ts` combining window manager + keyboard simulator
     - Implement `executeCancel()`: activate window → Ctrl+C
     - Implement `executePrompt(text)`: activate window → type text → Enter
