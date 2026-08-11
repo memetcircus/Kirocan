@@ -1,0 +1,13 @@
+{
+  "name": "kirocan",
+  "version": "1.0.0",
+  "private": true,
+  "description": "KiroCan - Physical AI coding companion for Logitech MX Creative Console + Kiro IDE",
+  "scripts": {
+    "build:sprites": "npx tsx scripts/build-animation-tiles.ts"
+  },
+  "devDependencies": {
+    "canvas": "2.11.2",
+    "tsx": "4.19.2"
+  }
+}
