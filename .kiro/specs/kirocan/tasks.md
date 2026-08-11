@@ -41,7 +41,7 @@ KiroCan connects a Logitech MX Creative Console to Kiro IDE on Windows through t
     - Implement 2-minute working state timeout that auto-transitions to idle
     - _Requirements: 17.3, 17.4, 17.5, 17.6, 6.3, 6.4_
 
-  - [ ]* 2.2 Write property test for state machine transitions (Property 6)
+  - [x]* 2.2 Write property test for state machine transitions (Property 6)
     - **Property 6: State Machine Transitions with Suppression**
     - Generate sequences of {event, timestamp} pairs, verify state updates correctly when not suppressed and remains unchanged when suppressed
     - **Validates: Requirements 17.3, 17.4, 17.6**
@@ -66,7 +66,7 @@ KiroCan connects a Logitech MX Creative Console to Kiro IDE on Windows through t
     - Only dispatch key events after Kiro window is confirmed foreground
     - _Requirements: 21.5_
 
-- [ ] 5. Implement Bridge shortcut executor
+- [x] 5. Implement Bridge shortcut executor
   - [x] 5.1 Implement the shortcut executor orchestrator
     - Create `bridge/src/shortcut-executor.ts` combining window manager + keyboard simulator
     - Implement `executeCancel()`: activate window → Ctrl+C
@@ -80,13 +80,13 @@ KiroCan connects a Logitech MX Creative Console to Kiro IDE on Windows through t
     - Each method returns `ActionResult` with success/error
     - _Requirements: 6.2, 5.2, 5.3, 5.4, 9.2, 10.2, 8.2, 7.3, 7.4_
 
-  - [ ] 5.2 Implement screenshot executor
+  - [x] 5.2 Implement screenshot executor
     - Implement `executeScreenshot()`: invoke Win+Shift+S → poll clipboard every 250ms for 30s → if image found, activate Kiro and paste
     - Handle 30-second timeout as cancellation
     - Handle Kiro window unavailable after capture
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-  - [ ] 5.3 Implement screen recording executor
+  - [x] 5.3 Implement screen recording executor
     - Implement `executeScreenRecord(mode)`: quick mode = 5 frames at 500ms intervals, long mode = 10 frames at 800ms intervals
     - Resize frames to 1280px width maintaining aspect ratio, encode JPEG at 80% quality
     - Skip failed frame captures, continue with remaining
@@ -105,16 +105,16 @@ KiroCan connects a Logitech MX Creative Console to Kiro IDE on Windows through t
     - Implement `resetContext()` for new session events
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.8, 2.9_
 
-  - [ ]* 6.2 Write property test for health level determination (Property 1)
+  - [x]* 6.2 Write property test for health level determination (Property 1)
     - **Property 1: Health Level Determination**
     - Generate integers 0-100, verify threshold classification matches requirements
     - **Validates: Requirements 2.2, 2.3, 2.4**
 
-- [ ] 7. Checkpoint - Ensure all Bridge core modules pass tests
+- [x] 7. Checkpoint - Ensure all Bridge core modules pass tests
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 8. Implement Bridge HTTP server
-  - [ ] 8.1 Implement the Express HTTP server with all endpoints
+- [x] 8. Implement Bridge HTTP server
+  - [x] 8.1 Implement the Express HTTP server with all endpoints
     - Create `bridge/src/http-server.ts` with Express app
     - Implement `GET /health` returning `HealthResponse` JSON
     - Implement `POST /cancel` calling shortcut executor cancel + entering suppression window
@@ -131,32 +131,32 @@ KiroCan connects a Logitech MX Creative Console to Kiro IDE on Windows through t
     - Listen on localhost:9848
     - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7, 18.8_
 
-  - [ ]* 8.2 Write property test for prompt body length validation (Property 10)
+  - [x]* 8.2 Write property test for prompt body length validation (Property 10)
     - **Property 10: Prompt Body Length Validation**
     - Generate strings of varying lengths (0, 1-4096, >4096), verify accept/reject behavior
     - **Validates: Requirements 18.7**
 
-  - [ ]* 8.3 Write property test for health response serialization round-trip (Property 3)
+  - [x]* 8.3 Write property test for health response serialization round-trip (Property 3)
     - **Property 3: Health Response Serialization Round-Trip**
     - Generate valid HealthResponse objects with constrained fields, verify JSON round-trip preserves all values
     - **Validates: Requirements 22.1, 22.2, 22.3**
 
-  - [ ]* 8.4 Write property test for invalid health response defaults (Property 4)
+  - [x]* 8.4 Write property test for invalid health response defaults (Property 4)
     - **Property 4: Invalid Health Response Defaults to Safe Values**
     - Generate malformed JSON strings, objects with missing fields, out-of-range contextPercentage values
     - Verify parser returns idle/normal/0 defaults
     - **Validates: Requirements 22.4, 22.5**
 
-- [ ] 9. Wire Bridge entry point
-  - [ ] 9.1 Compose all Bridge modules in index.ts
+- [x] 9. Wire Bridge entry point
+  - [x] 9.1 Compose all Bridge modules in index.ts
     - Wire state machine, health monitor, window manager, keyboard simulator, shortcut executor, and HTTP server together in `bridge/src/index.ts`
     - Start health monitor polling on startup
     - Start HTTP server on port 9848
     - Handle graceful shutdown (SIGTERM/SIGINT)
     - _Requirements: 18.1_
 
-- [ ] 10. Implement Plugin application and health polling
-  - [ ] 10.1 Implement KiroCanApplication with Bridge polling
+- [x] 10. Implement Plugin application and health polling
+  - [x] 10.1 Implement KiroCanApplication with Bridge polling
     - Create `plugin/src/KiroCanApplication.cs` inheriting `ClientApplication`
     - Implement 500ms poll timer calling GET /health with 2000ms HTTP timeout
     - Parse HealthResponse JSON, update shared state (CurrentState, CurrentHealthLevel, ContextPercentage)
@@ -165,13 +165,13 @@ KiroCan connects a Logitech MX Creative Console to Kiro IDE on Windows through t
     - Reset failure counter on successful poll
     - _Requirements: 1.4, 1.5, 19.1, 19.2, 19.3, 22.2, 22.4, 22.5_
 
-  - [ ]* 10.2 Write property test for bridge connectivity state (Property 11)
+  - [x]* 10.2 Write property test for bridge connectivity state (Property 11)
     - **Property 11: Bridge Connectivity State**
     - Generate boolean sequences (success/failure poll results), verify disconnected state triggers after exactly 2 consecutive failures and resets on any success
     - **Validates: Requirements 19.2, 19.3**
 
-- [ ] 11. Implement Plugin animation engine
-  - [ ] 11.1 Implement the AnimationEngine class
+- [x] 11. Implement Plugin animation engine
+  - [x] 11.1 Implement the AnimationEngine class
     - Create `plugin/src/Animation/AnimationEngine.cs`
     - Load 30-frame normal ghost sprites and 30-frame critical (flaming hair) sprites from embedded resources
     - Implement frame timer: 100ms normal, 67ms worried, 50ms critical
@@ -181,44 +181,44 @@ KiroCan connects a Logitech MX Creative Console to Kiro IDE on Windows through t
     - Emit OnFrameChanged event for UI updates
     - _Requirements: 1.1, 1.2, 1.3, 1.6, 2.5, 2.6, 2.7, 2.10_
 
-  - [ ]* 11.2 Write property test for animation speed mapping (Property 2)
+  - [x]* 11.2 Write property test for animation speed mapping (Property 2)
     - **Property 2: Animation Speed Mapping**
     - Generate HealthLevel enum values, verify duration is 100ms for normal, 67ms for worried, 50ms for critical
     - **Validates: Requirements 2.5, 2.6, 2.7**
 
-  - [ ]* 11.3 Write property test for frame cycling invariant (Property 7)
+  - [x]* 11.3 Write property test for frame cycling invariant (Property 7)
     - **Property 7: Frame Cycling Invariant**
     - Generate frame indices 0-29, verify advance produces (index + 1) % 30
     - **Validates: Requirements 1.3**
 
-  - [ ]* 11.4 Write property test for tile extraction dimensions (Property 8)
+  - [x]* 11.4 Write property test for tile extraction dimensions (Property 8)
     - **Property 8: Tile Extraction Dimensions**
     - Generate random 216x216 byte arrays and positions 0-8, verify extracted tile is exactly 72x72 pixels at correct row/col
     - **Validates: Requirements 1.6**
 
-- [ ] 12. Implement Plugin page layout and button commands
-  - [ ] 12.1 Implement Page Manager and button layout
+- [x] 12. Implement Plugin page layout and button commands
+  - [x] 12.1 Implement Page Manager and button layout
     - Create `plugin/src/PageLayout.cs` with static arrays defining Page 1, Page 2, Page 3 button assignments
     - Page 1: Screenshot, BeHonest, DontCodeYet, ShowOptions, ExplainWhy, Stop, KeepShort, NoTests, Go
     - Page 2: NewSession, StructPrompt, InlineChat, TerminalToChat, ScreenRecord, AskKiro, UnderstandWorkspace, StartSpec, GitCommit
     - Page 3: Criticize, Refactor, WriteTests, Explain, FixBug, Optimize, Review, Document, Simplify
     - _Requirements: 20.1, 20.2, 20.3_
 
-  - [ ] 12.2 Implement Prompt Command actions (Page 3)
+  - [x] 12.2 Implement Prompt Command actions (Page 3)
     - Create `plugin/src/Actions/Prompts/` with command classes for each of the 9 prompts
     - Each command sends POST /prompt with the command name text
     - Start Ghost_Animation on button press, stop when state returns to idle
     - Ignore button press if bridge state is already "working"
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7_
 
-  - [ ] 12.3 Implement Snippet actions (Page 1)
+  - [x] 12.3 Implement Snippet actions (Page 1)
     - Create `plugin/src/Actions/Snippets/` with command classes for each snippet
     - Snippets: "Be Honest", "Don't Code Yet", "Show Options", "Explain Why", "Keep Short", "No Tests"
     - Implement "Go!" button sending Enter without typing
     - Each snippet appends text to chat input without submitting
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
-  - [ ] 12.4 Implement Utility Control actions (Page 2)
+  - [x] 12.4 Implement Utility Control actions (Page 2)
     - Implement Screenshot button → POST /screenshot
     - Implement Stop button → POST /cancel with 1-second debounce
     - Implement New Session button → POST /new-session
@@ -232,8 +232,8 @@ KiroCan connects a Logitech MX Creative Console to Kiro IDE on Windows through t
     - Implement Git Commit button → POST /prompt with git commit text
     - _Requirements: 3.1, 6.1, 6.6, 8.1, 13.1, 9.1, 10.1, 4.1, 5.1, 16.1, 14.1, 15.1_
 
-- [ ] 13. Implement Plugin dial navigation
-  - [ ] 13.1 Implement SessionNavigateAdjustment for dial rotation
+- [x] 13. Implement Plugin dial navigation
+  - [x] 13.1 Implement SessionNavigateAdjustment for dial rotation
     - Create `plugin/src/Actions/SessionNavigateAdjustment.cs` inheriting `PluginDynamicAdjustment`
     - Implement rotation accumulator with NotchThreshold of 18
     - Reset accumulator on direction reversal
@@ -241,23 +241,23 @@ KiroCan connects a Logitech MX Creative Console to Kiro IDE on Windows through t
     - Initialize accumulator to 0 and direction to Undefined
     - _Requirements: 7.1, 7.2, 7.5, 7.6, 7.7_
 
-  - [ ]* 13.2 Write property test for dial rotation threshold (Property 5)
+  - [x]* 13.2 Write property test for dial rotation threshold (Property 5)
     - **Property 5: Dial Rotation Threshold Trigger**
     - Generate tick sequences (direction + magnitude), verify switch fires at exactly threshold and accumulator resets, verify direction reversal resets accumulator
     - **Validates: Requirements 7.1, 7.2, 7.5, 7.6**
 
-- [ ] 14. Implement Plugin button debounce and animation integration
-  - [ ] 14.1 Implement button debounce for Stop button
+- [x] 14. Implement Plugin button debounce and animation integration
+  - [x] 14.1 Implement button debounce for Stop button
     - Create `plugin/src/ButtonDebounce.cs` with 1-second window filtering
     - Integrate with Stop button command to discard rapid repeat presses
     - _Requirements: 6.6_
 
-  - [ ]* 14.2 Write property test for button debounce (Property 9)
+  - [x]* 14.2 Write property test for button debounce (Property 9)
     - **Property 9: Button Debounce**
     - Generate monotonically increasing timestamp sequences, verify exactly one press passes per 1-second window
     - **Validates: Requirements 6.6**
 
-  - [ ] 14.3 Implement animation rendering integration
+  - [x] 14.3 Implement animation rendering integration
     - Wire AnimationEngine to page display: start animation on "working" state for Page 1 and Page 3 buttons
     - Do NOT animate Page 2 buttons regardless of state
     - Stop animation and restore static icons on "idle" transition
@@ -265,43 +265,43 @@ KiroCan connects a Logitech MX Creative Console to Kiro IDE on Windows through t
     - Handle disconnected state showing disconnect indicator on all 9 buttons
     - _Requirements: 1.1, 1.2, 20.4, 20.5, 20.6, 2.10, 19.2_
 
-- [ ] 15. Checkpoint - Ensure all Plugin tests pass
+- [x] 15. Checkpoint - Ensure all Plugin tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 16. Create Kiro hook configuration files
-  - [ ] 16.1 Create hook files for state detection
+- [x] 16. Create Kiro hook configuration files
+  - [x] 16.1 Create hook files for state detection
     - Create `.kiro/hooks/kirocan-working.json` with UserPromptSubmit trigger → POST http://localhost:9848/hook/working
     - Create `.kiro/hooks/kirocan-idle.json` with Stop trigger → POST http://localhost:9848/hook/idle
     - Use curl command with -s flag and 2-second timeout
     - _Requirements: 17.1, 17.2, 17.7_
 
-- [ ] 17. Integration testing and final wiring
-  - [ ]* 17.1 Write integration tests for Bridge HTTP endpoints
+- [x] 17. Integration testing and final wiring
+  - [x]* 17.1 Write integration tests for Bridge HTTP endpoints
     - Test all routes with Supertest: GET /health, POST /cancel, /ask, /prompt, /inline, /terminal, /new-session, /session/next, /session/previous, /screenshot, /screen-record, /hook/working, /hook/idle
     - Verify correct HTTP status codes (200, 400, 503)
     - Verify JSON response structure
     - _Requirements: 18.2, 18.3, 18.4, 18.5, 18.6, 18.7, 18.8_
 
-  - [ ]* 17.2 Write integration tests for state machine hook flow
+  - [x]* 17.2 Write integration tests for state machine hook flow
     - Test /hook/working → state becomes "working" in /health response
     - Test /hook/idle → state becomes "idle" in /health response
     - Test suppression window blocks state changes
     - Test 2-minute working timeout
     - _Requirements: 17.3, 17.4, 17.5, 17.6_
 
-  - [ ] 17.3 Create Bridge startup script and build configuration
+  - [x] 17.3 Create Bridge startup script and build configuration
     - Add `bridge/package.json` scripts: "build", "start", "test" (vitest --run)
     - Ensure `npm run build` compiles TypeScript successfully
     - Ensure `npm test` runs all unit and property tests
     - _Requirements: 18.1_
 
-  - [ ] 17.4 Create Plugin build configuration
+  - [x] 17.4 Create Plugin build configuration
     - Ensure `dotnet build` compiles the plugin project successfully
     - Ensure `dotnet test` runs all xUnit and FsCheck property tests
     - Verify PluginApi.dll reference resolves correctly
     - _Requirements: 19.4_
 
-- [ ] 18. Final checkpoint - Ensure all tests pass
+- [x] 18. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
