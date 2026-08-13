@@ -1,0 +1,18 @@
+# Build outputs
+bridge/node_modules/
+bridge/dist/
+plugin/bin/
+plugin/obj/
+KiroCanPlugin/bin/
+KiroCanPlugin/obj/
+
+# Package artifacts
+plugin/KiroCan.lplug4
+bridge/package-lock.json
+
+# IDE
+.vs/
+*.user
+
+# Temp scripts (not part of the project)
+create-lplug4.ps1

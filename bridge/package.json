@@ -4,17 +4,17 @@
   "description": "KiroCan Bridge - HTTP server connecting MX Creative Console plugin to Kiro IDE via Win32 APIs",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "npx tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
-    "test": "vitest --run"
+    "test": "npx vitest --run"
   },
   "keywords": [],
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
     "express": "4.21.2",
-    "koffi": "2.9.3",
+    "koffi": "2.16.3",
     "clipboardy": "4.0.0"
   },
   "devDependencies": {

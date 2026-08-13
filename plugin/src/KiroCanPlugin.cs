@@ -12,7 +12,6 @@ public class KiroCanPlugin : Plugin
     public override void Load()
     {
         Instance = this;
-        PluginResources.Init(this.Assembly);
         Application.Start();
     }
 
