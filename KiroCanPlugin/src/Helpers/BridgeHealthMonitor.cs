@@ -50,6 +50,7 @@ namespace Loupedeck.KiroCanPlugin
                 if (_consecutiveFailures >= MaxFailures && IsConnected)
                 {
                     IsConnected = false;
+                    PluginLog.Warning("Bridge disconnected");
                     StateChanged?.Invoke(this, EventArgs.Empty);
                 }
                 return;
@@ -73,6 +74,7 @@ namespace Loupedeck.KiroCanPlugin
                     IsConnected = true;
                     _consecutiveFailures = 0;
                     changed = true;
+                    PluginLog.Info($"Bridge connected, state={State}");
                 }
                 else
                 {
@@ -81,6 +83,7 @@ namespace Loupedeck.KiroCanPlugin
 
                 if (changed)
                 {
+                    PluginLog.Info($"State changed: state={State}, health={HealthLevel}");
                     StateChanged?.Invoke(this, EventArgs.Empty);
                 }
             }

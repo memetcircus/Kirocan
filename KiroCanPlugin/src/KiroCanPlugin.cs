@@ -25,7 +25,13 @@ namespace Loupedeck.KiroCanPlugin
             HealthMonitor = new BridgeHealthMonitor();
             HealthMonitor.Start();
             PluginLog.Info("KiroCan plugin loaded, health monitor started");
+
+            // Notify all already-loaded actions that the monitor is ready
+            HealthMonitorReady?.Invoke(this, EventArgs.Empty);
         }
+
+        /// <summary>Fired after HealthMonitor is created, so actions can subscribe.</summary>
+        internal event EventHandler HealthMonitorReady;
 
         public override void Unload()
         {

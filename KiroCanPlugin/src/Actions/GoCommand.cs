@@ -2,11 +2,14 @@ namespace Loupedeck.KiroCanPlugin
 {
     using System;
 
-    /// <summary>Submits the current chat input (press Enter).</summary>
-    public class GoCommand : PluginDynamicCommand
+    /// <summary>Tile 8 (Bottom-Right): Submits the current chat input (press Enter).</summary>
+    public class GoCommand : AnimatedTileCommand
     {
         public GoCommand()
-            : base("Go!", "Submit current chat input", "Kiro Commands") { }
+            : base("Go!", "Submit current chat input", "Snippets") { }
+
+        protected override Int32 TileIndex => 8;
+        protected override String IdleLabel => "Go!";
 
         protected override async void RunCommand(String actionParameter)
         {
