@@ -21,9 +21,9 @@ namespace Loupedeck.KiroCanPlugin
         private static readonly List<AnimatedTileCommand> _instances = new List<AnimatedTileCommand>();
 
         private const Int32 TotalFrames = 30;
-        private const Int32 NormalIntervalMs = 50;    // 20fps - faster
-        private const Int32 WorriedIntervalMs = 40;   // 25fps
-        private const Int32 CriticalIntervalMs = 33;  // 30fps
+        private const Int32 NormalIntervalMs = 100;   // 10fps
+        private const Int32 WorriedIntervalMs = 70;   // 14fps
+        private const Int32 CriticalIntervalMs = 50;  // 20fps
 
         /// <summary>The tile index (0-8) this button represents in the 3x3 grid.</summary>
         protected abstract Int32 TileIndex { get; }

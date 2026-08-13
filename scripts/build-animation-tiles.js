@@ -57,17 +57,20 @@ async function main() {
       const bobY = Math.round(Math.sin(progress * Math.PI * 2) * BOB_AMPLITUDE);
       const baseY = Math.round((CANVAS_SIZE - GHOST_SIZE) / 2 + bobY);
 
-      // Walk direction: frames 0-14 left→right, frames 15-29 right→left
+      // Walk direction: frames 0-14 left→right (exits right), frames 15-29 right→left (exits left)
       const isSecondHalf = frame >= 15;
       const halfProgress = isSecondHalf
         ? (frame - 15) / 14
         : frame / 14;
 
-      const maxX = CANVAS_SIZE - GHOST_SIZE; // 90px
+      // Ghost travels from off-screen left (-GHOST_SIZE) to off-screen right (CANVAS_SIZE)
+      const totalTravel = CANVAS_SIZE + GHOST_SIZE; // 630px total
+      const startX = -GHOST_SIZE; // start fully off-screen left
+
       const x = Math.round(
         isSecondHalf
-          ? maxX * (1 - halfProgress)
-          : maxX * halfProgress
+          ? startX + totalTravel * (1 - halfProgress) // right to left
+          : startX + totalTravel * halfProgress        // left to right
       );
 
       // Composite ghost onto canvas
