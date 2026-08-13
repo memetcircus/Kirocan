@@ -2,34 +2,37 @@ namespace Loupedeck.KiroCanPlugin
 {
     using System;
 
-    // This class contains the plugin-level logic of the Loupedeck plugin.
-
+    /// <summary>
+    /// Main plugin entry point for KiroCan.
+    /// Manages the bridge health monitor lifecycle.
+    /// </summary>
     public class KiroCanPlugin : Plugin
     {
-        // Gets a value indicating whether this is an API-only plugin.
         public override Boolean UsesApplicationApiOnly => true;
-
-        // Gets a value indicating whether this is a Universal plugin or an Application plugin.
         public override Boolean HasNoApplication => true;
 
-        // Initializes a new instance of the plugin class.
+        /// <summary>Shared health monitor instance used by actions.</summary>
+        internal BridgeHealthMonitor HealthMonitor { get; private set; }
+
         public KiroCanPlugin()
         {
-            // Initialize the plugin log.
             PluginLog.Init(this.Log);
-
-            // Initialize the plugin resources.
             PluginResources.Init(this.Assembly);
         }
 
-        // This method is called when the plugin is loaded.
         public override void Load()
         {
+            HealthMonitor = new BridgeHealthMonitor();
+            HealthMonitor.Start();
+            PluginLog.Info("KiroCan plugin loaded, health monitor started");
         }
 
-        // This method is called when the plugin is unloaded.
         public override void Unload()
         {
+            HealthMonitor?.Stop();
+            HealthMonitor?.Dispose();
+            HealthMonitor = null;
+            PluginLog.Info("KiroCan plugin unloaded");
         }
     }
 }

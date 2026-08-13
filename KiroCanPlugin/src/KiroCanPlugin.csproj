@@ -30,6 +30,12 @@
     </Reference>
   </ItemGroup>
 
+  <!-- Embed sprite tile images as resources -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\assets\sprites\tiles\ghost-walk\*.png" Link="Sprites\ghost-walk\%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\..\assets\sprites\tiles\ghost-walk-fire\*.png" Link="Sprites\ghost-walk-fire\%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <Target Name="CopyPackage" AfterTargets="PostBuildEvent">
     <Message Text="📦 Copying package files..." Importance="High" />
     <ItemGroup>
