@@ -13,6 +13,9 @@ namespace Loupedeck.KiroCanPlugin
 
         protected override async void RunCommand(String actionParameter)
         {
+            // Try to cancel Kiro generation with Escape key
+            await BridgeClient.PostAsync("/cancel");
+            // Also force idle state to stop animation
             await BridgeClient.PostAsync("/hook/idle");
             ForceStopAnimation();
         }
