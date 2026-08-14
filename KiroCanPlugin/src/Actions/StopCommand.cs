@@ -13,7 +13,8 @@ namespace Loupedeck.KiroCanPlugin
 
         protected override async void RunCommand(String actionParameter)
         {
-            await BridgeClient.PostAsync("/cancel");
+            await BridgeClient.PostAsync("/hook/idle");
+            ForceStopAnimation();
         }
     }
 }

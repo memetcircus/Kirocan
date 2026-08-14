@@ -90,7 +90,8 @@ export async function executeCancel(): Promise<ActionResult> {
   const result = await activateKiro();
   if (!result.success) return result;
 
-  sendKeyCombo([VK.VK_CONTROL, VK.VK_C]);
+  // Escape stops the current Kiro generation
+  sendKeyCombo([VK.VK_ESCAPE]);
   return { success: true };
 }
 

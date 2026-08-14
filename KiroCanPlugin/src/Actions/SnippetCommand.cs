@@ -28,39 +28,39 @@ namespace Loupedeck.KiroCanPlugin
         }
     }
 
-    /// <summary>Tile 1: Appends "be honest and critical" to chat.</summary>
+    /// <summary>Tile 1: Appends "be honest" qualifier to chat.</summary>
     public class BeHonestCommand : SnippetCommandBase
     {
-        public BeHonestCommand() : base("Be Honest", "be honest and critical", 1) { }
+        public BeHonestCommand() : base("Be Honest", " Be direct and critical. Point out problems, don't sugarcoat.", 1) { }
     }
 
-    /// <summary>Tile 2: Appends "don't write code yet, just explain the approach" to chat.</summary>
+    /// <summary>Tile 2: Appends "don't code yet" qualifier to chat.</summary>
     public class DontCodeYetCommand : SnippetCommandBase
     {
-        public DontCodeYetCommand() : base("Don't Code Yet", "don't write code yet, just explain the approach", 2) { }
+        public DontCodeYetCommand() : base("Don't Code Yet", " Don't write code yet. Explain the approach first, then wait for approval.", 2) { }
     }
 
-    /// <summary>Tile 3: Appends "show me multiple options" to chat.</summary>
+    /// <summary>Tile 3: Appends "show options" qualifier to chat.</summary>
     public class ShowOptionsCommand : SnippetCommandBase
     {
-        public ShowOptionsCommand() : base("Show Options", "show me multiple options", 3) { }
+        public ShowOptionsCommand() : base("Show Options", " Show me 2-3 different approaches with tradeoffs before picking one.", 3) { }
     }
 
-    /// <summary>Tile 4: Appends "explain why this is the best approach" to chat.</summary>
+    /// <summary>Tile 4: Appends "explain why" qualifier to chat.</summary>
     public class ExplainWhyCommand : SnippetCommandBase
     {
-        public ExplainWhyCommand() : base("Explain Why", "explain why this is the best approach", 4) { }
+        public ExplainWhyCommand() : base("Explain Why", " Explain your reasoning. Why this approach over alternatives?", 4) { }
     }
 
-    /// <summary>Tile 6: Appends "keep it short and concise" to chat.</summary>
+    /// <summary>Tile 6: Appends "keep short" qualifier to chat.</summary>
     public class KeepShortCommand : SnippetCommandBase
     {
-        public KeepShortCommand() : base("Keep Short", "keep it short and concise", 6) { }
+        public KeepShortCommand() : base("Keep Short", " Keep it concise. No boilerplate, no filler, just the essential changes.", 6) { }
     }
 
-    /// <summary>Tile 7: Appends "no tests needed" to chat.</summary>
+    /// <summary>Tile 7: Appends "no tests" qualifier to chat.</summary>
     public class NoTestsCommand : SnippetCommandBase
     {
-        public NoTestsCommand() : base("No Tests", "no tests needed", 7) { }
+        public NoTestsCommand() : base("No Tests", " Don't add tests. Focus only on the implementation.", 7) { }
     }
 }

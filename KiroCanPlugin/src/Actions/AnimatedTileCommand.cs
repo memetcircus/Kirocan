@@ -29,6 +29,12 @@ namespace Loupedeck.KiroCanPlugin
         private static Dictionary<String, BitmapImage[][]> _imageCache;
         private static Boolean _cacheLoaded = false;
 
+        /// <summary>The tile index (0-8) this button represents in the 3x3 grid.</summary>
+        protected abstract Int32 TileIndex { get; }
+
+        /// <summary>The label shown when not animating.</summary>
+        protected abstract String IdleLabel { get; }
+
         private static void EnsureCacheLoaded()
         {
             if (_cacheLoaded) return;
@@ -66,9 +72,6 @@ namespace Loupedeck.KiroCanPlugin
                 PluginLog.Info($"Sprite cache loaded: {spriteSets.Length} sets x {TotalFrames} frames x 9 tiles");
             }
         }
-
-        /// <summary>The label shown when not animating.</summary>
-        protected abstract String IdleLabel { get; }
 
         protected AnimatedTileCommand(String displayName, String description, String groupName)
             : base(displayName, description, groupName) { }
@@ -214,6 +217,18 @@ namespace Loupedeck.KiroCanPlugin
                     }
                 }
             }
+        }
+
+        /// <summary>Forces all animated tiles to stop and refresh to idle state.</summary>
+        internal static void ForceStopAnimation()
+        {
+            lock (_lock)
+            {
+                _isAnimating = false;
+                _sharedTimer?.Stop();
+                _currentFrame = 0;
+            }
+            NotifyAllInstances();
         }
 
         protected override BitmapImage GetCommandImage(String actionParameter, PluginImageSize imageSize)
