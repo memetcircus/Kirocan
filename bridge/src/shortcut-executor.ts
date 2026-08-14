@@ -325,7 +325,15 @@ export async function executeScreenshot(): Promise<ActionResult> {
   const initialSeqNum = GetClipboardSequenceNumber();
 
   // 2. Simulate Win+Shift+S to invoke the Windows Snipping Tool
-  sendKeyCombo([VK.VK_LWIN, VK.VK_SHIFT, VK.VK_S]);
+  try {
+    const { execSync } = require("node:child_process");
+    execSync(
+      'powershell -NoProfile -Command "Start-Process ms-screenclip:"',
+      { timeout: 3000 }
+    );
+  } catch {
+    sendKeyCombo([VK.VK_LWIN, VK.VK_SHIFT, VK.VK_S]);
+  }
 
   // 3. Poll clipboard for a new image (up to 30 seconds, every 250ms)
   const POLL_INTERVAL_MS = 250;

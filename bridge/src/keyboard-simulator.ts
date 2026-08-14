@@ -143,6 +143,22 @@ function sleepSync(ms: number): void {
 export function sendKeyCombo(keys: number[]): void {
   if (keys.length === 0) return;
 
+  // Try PowerShell SendKeys first (reliable on ARM64)
+  const sendKeysStr = vkArrayToSendKeys(keys);
+  if (sendKeysStr) {
+    try {
+      const { execSync } = require("node:child_process");
+      execSync(
+        `powershell -NoProfile -Command "$wsh = New-Object -ComObject WScript.Shell; $wsh.SendKeys('${sendKeysStr}')"`,
+        { timeout: 3000 }
+      );
+      return;
+    } catch {
+      // Fall through to koffi
+    }
+  }
+
+  // Fallback: koffi SendInput
   const inputs: Buffer[] = [];
 
   // Press all keys in order (key down)
@@ -156,6 +172,54 @@ export function sendKeyCombo(keys: number[]): void {
   }
 
   sendInputs(inputs);
+}
+
+/**
+ * Converts VK array to WScript.Shell SendKeys format.
+ * Returns null if conversion is not possible.
+ */
+function vkArrayToSendKeys(keys: number[]): string | null {
+  let prefix = "";
+  let mainKey = "";
+
+  for (const key of keys) {
+    switch (key) {
+      case VK.VK_CONTROL: prefix += "^"; break;
+      case VK.VK_SHIFT: prefix += "+"; break;
+      case VK.VK_MENU: prefix += "%"; break;
+      case 0x5b: return null; // VK_LWIN - SendKeys can't do Win key
+      case 0x5c: return null; // VK_RWIN - SendKeys can't do Win key
+      case VK.VK_RETURN: mainKey = "{ENTER}"; break;
+      case VK.VK_ESCAPE: mainKey = "{ESC}"; break;
+      case VK.VK_TAB: mainKey = "{TAB}"; break;
+      case VK.VK_BACK: mainKey = "{BACKSPACE}"; break;
+      case VK.VK_DELETE: mainKey = "{DELETE}"; break;
+      case VK.VK_LEFT: mainKey = "{LEFT}"; break;
+      case VK.VK_RIGHT: mainKey = "{RIGHT}"; break;
+      case VK.VK_UP: mainKey = "{UP}"; break;
+      case VK.VK_DOWN: mainKey = "{DOWN}"; break;
+      case VK.VK_F1: mainKey = "{F1}"; break;
+      case VK.VK_F2: mainKey = "{F2}"; break;
+      case VK.VK_F3: mainKey = "{F3}"; break;
+      case VK.VK_F4: mainKey = "{F4}"; break;
+      case VK.VK_F5: mainKey = "{F5}"; break;
+      default:
+        // A-Z keys: VK codes 0x41-0x5A map to lowercase letters
+        if (key >= 0x41 && key <= 0x5A) {
+          mainKey = String.fromCharCode(key + 32); // lowercase
+        }
+        // 0-9 keys
+        else if (key >= 0x30 && key <= 0x39) {
+          mainKey = String.fromCharCode(key);
+        }
+        else {
+          return null; // Can't convert
+        }
+    }
+  }
+
+  if (!mainKey) return null;
+  return prefix + mainKey;
 }
 
 /**
