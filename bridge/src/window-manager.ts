@@ -192,6 +192,26 @@ function sleep(ms: number): Promise<void> {
  * @returns The window handle of the Kiro IDE window, or null if not found.
  */
 export function findKiroWindow(): WindowHandle | null {
+  // Use PowerShell to find the Kiro window handle (reliable on ARM64)
+  try {
+    const { execSync } = require("node:child_process");
+    const result = execSync(
+      'powershell -NoProfile -Command "(Get-Process Kiro -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1).MainWindowHandle"',
+      { encoding: "utf8", timeout: 3000 }
+    ).trim();
+
+    if (result && result !== "0" && result !== "") {
+      const hwnd = parseInt(result, 10);
+      if (!isNaN(hwnd) && hwnd !== 0) {
+        console.log(`[DEBUG] Found Kiro window via PowerShell: HWND=${hwnd}`);
+        return hwnd as WindowHandle;
+      }
+    }
+  } catch (e) {
+    // PowerShell fallback failed
+  }
+
+  // Original EnumWindows approach as secondary fallback
   const candidates: WindowHandle[] = [];
 
   // EnumWindows calls the callback synchronously for each top-level window.
@@ -211,12 +231,30 @@ export function findKiroWindow(): WindowHandle | null {
     const pid = pidOut[0];
     if (pid === null || pid === 0) return 1;
 
-    // Check if the process is Kiro.exe
+    // Check if the process is Kiro.exe (by process name or window title fallback)
     const processName = getProcessName(pid);
-    if (
+    const isKiroByProcess =
       processName !== null &&
-      processName.toLowerCase() === KIRO_PROCESS_NAME.toLowerCase()
-    ) {
+      processName.toLowerCase() === KIRO_PROCESS_NAME.toLowerCase();
+
+    // Fallback: check window title ends with "- Kiro" (for ARM64/permission issues)
+    let isKiroByTitle = false;
+    if (!isKiroByProcess) {
+      const MAX_TITLE = 256;
+      const titleBuf = Buffer.alloc(MAX_TITLE * 2);
+      const titleLen = GetWindowTextW(handleToPtr(handle), titleBuf, MAX_TITLE);
+      if (titleLen > 0) {
+        const title = titleBuf.toString("utf16le", 0, titleLen * 2);
+        if (title.includes("Kiro")) {
+          isKiroByTitle = true;
+          console.log(`[DEBUG] Found Kiro window by title: "${title}"`);
+        }
+      }
+    } else {
+      console.log(`[DEBUG] Found Kiro window by process: ${processName}`);
+    }
+
+    if (isKiroByProcess || isKiroByTitle) {
       candidates.push(handle);
     }
 
@@ -263,6 +301,21 @@ export function findKiroWindow(): WindowHandle | null {
  * @returns true if the window successfully achieved foreground status.
  */
 export async function activateWindow(handle: WindowHandle): Promise<boolean> {
+  // Use PowerShell to activate the window (reliable on ARM64 where koffi may fail)
+  try {
+    const { execSync } = require("node:child_process");
+    execSync(
+      `powershell -NoProfile -Command "$wsh = New-Object -ComObject WScript.Shell; $wsh.AppActivate((Get-Process Kiro | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1).Id)"`,
+      { encoding: "utf8", timeout: 3000 }
+    );
+    // Give window time to come to foreground
+    await sleep(200);
+    return true;
+  } catch (e) {
+    console.log(`[DEBUG] PowerShell activate failed: ${e}`);
+  }
+
+  // Fallback to koffi approach
   if (!IsWindow(handleToPtr(handle))) return false;
 
   // Restore the window if it is minimized

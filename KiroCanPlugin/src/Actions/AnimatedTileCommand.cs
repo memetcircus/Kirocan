@@ -25,8 +25,47 @@ namespace Loupedeck.KiroCanPlugin
         private const Int32 WorriedIntervalMs = 70;   // 14fps
         private const Int32 CriticalIntervalMs = 50;  // 20fps
 
-        /// <summary>The tile index (0-8) this button represents in the 3x3 grid.</summary>
-        protected abstract Int32 TileIndex { get; }
+        // Image cache: [spriteSet][frameIndex][tileIndex]
+        private static Dictionary<String, BitmapImage[][]> _imageCache;
+        private static Boolean _cacheLoaded = false;
+
+        private static void EnsureCacheLoaded()
+        {
+            if (_cacheLoaded) return;
+            lock (_lock)
+            {
+                if (_cacheLoaded) return;
+
+                _imageCache = new Dictionary<String, BitmapImage[][]>();
+                var spriteSets = new[] { "ghost-walk", "ghost-walk-fire" };
+
+                foreach (var spriteSet in spriteSets)
+                {
+                    var frames = new BitmapImage[TotalFrames][];
+                    for (var f = 0; f < TotalFrames; f++)
+                    {
+                        frames[f] = new BitmapImage[9];
+                        var frameStr = f.ToString("D2");
+                        for (var t = 0; t < 9; t++)
+                        {
+                            var fileName = $"frame-{frameStr}-tile-{t}.png";
+                            try
+                            {
+                                frames[f][t] = PluginResources.ReadImage(fileName);
+                            }
+                            catch
+                            {
+                                frames[f][t] = null;
+                            }
+                        }
+                    }
+                    _imageCache[spriteSet] = frames;
+                }
+
+                _cacheLoaded = true;
+                PluginLog.Info($"Sprite cache loaded: {spriteSets.Length} sets x {TotalFrames} frames x 9 tiles");
+            }
+        }
 
         /// <summary>The label shown when not animating.</summary>
         protected abstract String IdleLabel { get; }
@@ -210,21 +249,22 @@ namespace Loupedeck.KiroCanPlugin
 
         private BitmapImage RenderTile(Int32 frameIndex, Int32 tileIndex, PluginImageSize imageSize)
         {
-            var frameStr = frameIndex.ToString("D2");
-            var fileName = $"frame-{frameStr}-tile-{tileIndex}.png";
+            EnsureCacheLoaded();
 
-            try
+            if (_imageCache != null &&
+                _imageCache.TryGetValue(_currentSpriteSet, out var frames) &&
+                frameIndex < frames.Length &&
+                frames[frameIndex] != null &&
+                tileIndex < frames[frameIndex].Length &&
+                frames[frameIndex][tileIndex] != null)
             {
-                return PluginResources.ReadImage(fileName);
+                return frames[frameIndex][tileIndex];
             }
-            catch
-            {
-                // Tile image not found — show solid purple (animation background)
-                var builder = new BitmapBuilder(imageSize);
-                builder.Clear(new BitmapColor(145, 69, 253)); // #9145fd purple
-                builder.DrawText($"F{frameIndex}", new BitmapColor(255, 255, 255, 128), 9);
-                return builder.ToImage();
-            }
+
+            // Fallback: solid purple
+            var builder = new BitmapBuilder(imageSize);
+            builder.Clear(new BitmapColor(145, 69, 253));
+            return builder.ToImage();
         }
     }
 }
