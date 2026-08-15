@@ -33,6 +33,7 @@ import {
   executeScreenshot,
   executeScreenRecord,
   executeGo,
+  executeStructPrompt,
 } from "./shortcut-executor.js";
 
 // ---------------------------------------------------------------------------
@@ -375,6 +376,26 @@ export function createHttpServer(
    */
   app.post("/go", async (_req, res) => {
     const result = await executeGo();
+    if (!result.success) {
+      const errorResponse: ErrorResponse = { success: false, error: result.error! };
+      res.status(503).json(errorResponse);
+      return;
+    }
+    const successResponse: SuccessResponse = { success: true };
+    res.json(successResponse);
+  });
+
+  // -------------------------------------------------------------------------
+  // POST /struct-prompt
+  // -------------------------------------------------------------------------
+
+  /**
+   * Reads the current chat input text, wraps it in a meta-prompt asking
+   * Kiro to restructure it into a well-organized prompt, and submits.
+   * No request body needed — text is read from Kiro's chat input via clipboard.
+   */
+  app.post("/struct-prompt", async (_req, res) => {
+    const result = await executeStructPrompt();
     if (!result.success) {
       const errorResponse: ErrorResponse = { success: false, error: result.error! };
       res.status(503).json(errorResponse);

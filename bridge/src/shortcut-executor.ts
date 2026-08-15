@@ -306,6 +306,85 @@ export async function executeScreenRecord(
 }
 
 /**
+ * Reads the current text from the Kiro chat input, wraps it in a meta-prompt
+ * asking Kiro to restructure it, clears the input, pastes the meta-prompt,
+ * and submits.
+ *
+ * Flow:
+ *  1. Activate Kiro window (chat input should be focused).
+ *  2. Select all text in the chat input (Ctrl+A).
+ *  3. Copy it to clipboard (Ctrl+C).
+ *  4. Read clipboard text via PowerShell Get-Clipboard.
+ *  5. If clipboard is empty, return error.
+ *  6. Construct a meta-prompt wrapping the original text.
+ *  7. Write the meta-prompt to clipboard via PowerShell Set-Clipboard.
+ *  8. Select all again (to replace existing text) and paste (Ctrl+V).
+ *  9. Submit with Enter.
+ *
+ * @returns ActionResult indicating success or failure.
+ */
+export async function executeStructPrompt(): Promise<ActionResult> {
+  // 1. Activate Kiro window
+  const result = await activateKiro();
+  if (!result.success) return result;
+
+  // 2. Select all text in chat input
+  sendKeyCombo([VK.VK_CONTROL, VK.VK_A]);
+  await sleep(50);
+
+  // 3. Copy to clipboard
+  sendKeyCombo([VK.VK_CONTROL, VK.VK_C]);
+  await sleep(150);
+
+  // 4. Read clipboard text
+  let originalText: string;
+  try {
+    originalText = execSync(
+      'powershell -NoProfile -Command "Get-Clipboard"',
+      { timeout: 3000, encoding: "utf-8" }
+    ).trim();
+  } catch {
+    return { success: false, error: "Failed to read clipboard" };
+  }
+
+  // 5. If empty, nothing to restructure
+  if (!originalText || originalText.length === 0) {
+    return { success: false, error: "Chat input is empty — nothing to restructure" };
+  }
+
+  // 6. Construct the meta-prompt
+  const metaPrompt =
+    `Restructure the following messy prompt into a well-structured, clear prompt. ` +
+    `Organize it with proper sections (Goal, Context, Constraints) where applicable. ` +
+    `Output ONLY the restructured prompt text, nothing else — no explanation, no markdown fences:\n\n` +
+    originalText;
+
+  // 7. Write meta-prompt to clipboard
+  try {
+    // Write to a temp file to avoid quoting issues, then pipe to Set-Clipboard
+    const tempFile = join(tmpdir(), `kirocan-struct-${Date.now()}.txt`);
+    require("node:fs").writeFileSync(tempFile, metaPrompt, "utf-8");
+    execSync(
+      `powershell -NoProfile -Command "Get-Content -Raw '${tempFile.replace(/'/g, "''")}' | Set-Clipboard"`,
+      { timeout: 3000 }
+    );
+    require("node:fs").unlinkSync(tempFile);
+  } catch {
+    return { success: false, error: "Failed to write meta-prompt to clipboard" };
+  }
+
+  // 8. Select all (to replace) and paste the meta-prompt
+  sendKeyCombo([VK.VK_CONTROL, VK.VK_A]);
+  await sleep(50);
+  sendKeyCombo([VK.VK_CONTROL, VK.VK_V]);
+  await sleep(100);
+
+  // 9. Submit
+  sendKey(VK.VK_RETURN);
+  return { success: true };
+}
+
+/**
  * Captures a screen region via the Windows Snipping Tool (Win+Shift+S),
  * waits for the user to complete the snip, and pastes the resulting image
  * into the Kiro chat input.

@@ -3,16 +3,15 @@ namespace Loupedeck.KiroCanPlugin
     using System;
     using System.Text.Json;
 
-    /// <summary>Opens a structured prompt template in Kiro.</summary>
+    /// <summary>Restructures the current messy chat input into a well-organized prompt.</summary>
     public class StructPromptCommand : PluginDynamicCommand
     {
         public StructPromptCommand()
-            : base("Struct Prompt", "Open structured prompt template", "Utilities") { }
+            : base("Struct Prompt", "Restructure current chat text into a clear prompt", "Utilities") { }
 
         protected override async void RunCommand(String actionParameter)
         {
-            var body = JsonSerializer.Serialize(new { text = "I want to: [goal]\nContext: [context]\nConstraints: [constraints]" });
-            await BridgeClient.PostAsync("/snippet", body);
+            await BridgeClient.PostAsync("/struct-prompt");
         }
     }
 
