@@ -238,8 +238,10 @@ namespace Loupedeck.KiroCanPlugin
                 return RenderTile(_currentFrame, TileIndex, imageSize);
             }
 
-            // Idle: return null so SDK uses its default text-only display
-            return null;
+            // Idle: return transparent image so SDK shows only text label
+            var builder = new BitmapBuilder(imageSize);
+            builder.Clear(BitmapColor.Black);
+            return builder.ToImage();
         }
 
         protected override String GetCommandDisplayName(String actionParameter, PluginImageSize imageSize)

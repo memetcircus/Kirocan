@@ -13,7 +13,8 @@ namespace Loupedeck.KiroCanPlugin
 
         protected override async void RunCommand(String actionParameter)
         {
-            await BridgeClient.PostAsync("/go");
+            var body = System.Text.Json.JsonSerializer.Serialize(new { text = "Go!" });
+            await BridgeClient.PostAsync("/prompt", body);
         }
     }
 }
