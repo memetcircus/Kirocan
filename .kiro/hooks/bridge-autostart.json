@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Auto-start KiroCan Bridge",
+      "trigger": "SessionStart",
+      "description": "Starts the KiroCan bridge service if not already running when a Kiro session begins",
+      "action": {
+        "type": "command",
+        "command": "powershell -NoProfile -Command \"$env:PATH = 'C:\\\\Program Files\\\\Git\\\\bin;C:\\\\Program Files\\\\nodejs;' + $env:PATH; $bridge = Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like '*kirocan*' }; if (-not $bridge) { Start-Process -WindowStyle Hidden -FilePath 'cmd.exe' -ArgumentList '/c cd /d C:\\\\Users\\\\mehme\\\\OneDrive\\\\Documents\\\\Repos\\\\Kirocan\\\\bridge && npm start' }\"",
+        "timeout": 10
+      }
+    }
+  ]
+}
