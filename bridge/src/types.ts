@@ -15,10 +15,18 @@
 export interface HealthResponse {
   /** Current agent working state. */
   state: "working" | "idle";
-  /** Context health tier derived from session token usage. */
+  /** Context health tier (worst of context vs media severity). */
   healthLevel: "normal" | "worried" | "critical";
   /** Context window usage as an integer percentage (0-100). */
   contextPercentage: number;
+  /** Number of images in the current session. */
+  mediaCount: number;
+  /** Hard limit for inline media segments. */
+  mediaLimit: number;
+  /** Remaining images before hitting the limit. */
+  mediaRemaining: number;
+  /** True when mediaCount >= 90 (screenshot/screen-record blocked). */
+  mediaBlocked: boolean;
 }
 
 /**

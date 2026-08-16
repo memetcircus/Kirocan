@@ -97,6 +97,10 @@ export function createHttpServer(
       state: stateMachine.getState(),
       healthLevel: healthMonitor.getHealthLevel(),
       contextPercentage: healthMonitor.getContextPercentage(),
+      mediaCount: healthMonitor.getMediaCount(),
+      mediaLimit: healthMonitor.getMediaLimit(),
+      mediaRemaining: healthMonitor.getMediaRemaining(),
+      mediaBlocked: healthMonitor.isMediaBlocked(),
     };
     res.json(response);
   });
@@ -298,6 +302,14 @@ export function createHttpServer(
    * Captures a screen region via Win+Shift+S and pastes into Kiro chat.
    */
   app.post("/screenshot", async (_req, res) => {
+    if (healthMonitor.isMediaBlocked()) {
+      const errorResponse: ErrorResponse = {
+        success: false,
+        error: "Media limit reached (90+/100). Start a new session.",
+      };
+      res.status(400).json(errorResponse);
+      return;
+    }
     const result = await executeScreenshot();
     if (!result.success) {
       const errorResponse: ErrorResponse = { success: false, error: result.error! };
@@ -317,6 +329,15 @@ export function createHttpServer(
    * Body: `{mode: "quick" | "long"}`.
    */
   app.post("/screen-record", async (req, res) => {
+    if (healthMonitor.isMediaBlocked()) {
+      const errorResponse: ErrorResponse = {
+        success: false,
+        error: "Media limit reached (90+/100). Start a new session.",
+      };
+      res.status(400).json(errorResponse);
+      return;
+    }
+
     const { mode } = req.body ?? {};
 
     if (mode !== "quick" && mode !== "long") {
