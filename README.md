@@ -13,7 +13,7 @@ MX Creative Console → C# Plugin (Logi Actions SDK, .NET 10) → HTTP → Bridg
 - 📊 **Context Health** — Visual indicator showing context window usage (normal/worried/critical)
 - 📸 **Screenshot → Chat** — One button to capture screen region and paste into Kiro
 - 🎥 **Screen Record → Chat** — Capture frame sequences for visual analysis
-- 🔍 **Ask Kiro** — Select text in any app, press button to ask Kiro about it
+- 📋 **Paste To Kiro** — Select text in any app, press button to queue it; auto-pastes when you return to Kiro
 - ⏹️ **Stop/Cancel** — Physical button to immediately cancel Kiro generation
 - 🔄 **Session Navigate** — Dial rotation to switch between Kiro sessions
 - 💬 **9 Prompt Commands** — Explain, Criticize, Document, Fix Bug, Optimize, Refactor, Review, Simplify, Write Tests
@@ -30,7 +30,7 @@ MX Creative Console → C# Plugin (Logi Actions SDK, .NET 10) → HTTP → Bridg
 ### Page 2 — Utility Controls (no animation)
 | New Session | Struct Prompt | Inline Chat |
 |---|---|---|
-| Terminal→Chat | Screen Record | Ask Kiro |
+| Terminal→Chat | Screen Record | Paste To Kiro |
 | Workspace | Start Spec | Git Commit |
 
 ### Page 3 — Prompt Commands (animated)
@@ -140,6 +140,24 @@ Copy the built DLL to your Logi Plugin Service plugins directory.
 ### Kiro Hooks
 The `.kiro/hooks/` directory contains hook files that automatically signal the bridge when Kiro starts/stops working. These are included in the repository and active when the project is open in Kiro.
 
+### Paste To Kiro — Default Profile Button (Optional)
+
+The **Paste To Kiro** feature lets you collect text from any app (browser, editor, terminal) and have it automatically pasted into Kiro's chat when you switch back to Kiro. This requires a one-time manual setup in Logi Options+:
+
+1. Open **Logi Options+** → select your MX Creative Console
+2. Go to the **Default Profile** (top bar, first icon)
+3. Click an empty button slot → **System Actions** → **ADVANCED** → **Multi-action**
+4. Add two actions in this order:
+   - **Action 1**: Keyboard Shortcut → `Ctrl+C`
+   - **Action 2**: Run → browse to `bridge\paste-to-kiro.bat`
+5. Save
+
+**How it works:**
+- Select text anywhere → press the button → text is copied and queued in the bridge
+- Keep collecting from multiple tabs/apps — each press adds to the queue
+- When you click on Kiro (give it focus), all queued items are automatically pasted into the chat input
+- No focus switching happens until you manually return to Kiro
+
 ## Testing
 ### Bridge Tests
 ```bash
@@ -186,9 +204,12 @@ KiroCan/
 │   │   ├── http-server.ts      # Express HTTP endpoints
 │   │   ├── state-machine.ts    # Working/idle state + suppression
 │   │   ├── health-monitor.ts   # Context health from session files
+│   │   ├── clipboard-basket.ts # Paste To Kiro queue + auto-flush
 │   │   ├── window-manager.ts   # Win32 window activation
 │   │   ├── keyboard-simulator.ts  # Win32 SendInput
 │   │   └── shortcut-executor.ts   # High-level action orchestrator
+│   ├── paste-to-kiro.bat       # Helper for Logi Multi-action setup
+│   ├── dev-watch.cmd           # Auto rebuild + restart for development
 │   └── package.json
 ├── assets/                     # Ghost sprites (placeholder)
 └── README.md
