@@ -238,10 +238,8 @@ namespace Loupedeck.KiroCanPlugin
                 return RenderTile(_currentFrame, TileIndex, imageSize);
             }
 
-            // Idle: return transparent image so SDK shows only text label
-            var builder = new BitmapBuilder(imageSize);
-            builder.Clear(BitmapColor.Black);
-            return builder.ToImage();
+            // Idle: return null so SDK uses its default centered text display
+            return null;
         }
 
         protected override String GetCommandDisplayName(String actionParameter, PluginImageSize imageSize)
@@ -252,7 +250,7 @@ namespace Loupedeck.KiroCanPlugin
                 return "";
             }
 
-            // Idle: show the label
+            // Idle: show the label (SDK centers it)
             return IdleLabel;
         }
 
