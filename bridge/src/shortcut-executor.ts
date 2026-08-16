@@ -126,28 +126,34 @@ export async function executeSnippet(text: string): Promise<ActionResult> {
 }
 
 /**
- * Copies the current selection from the active window, then activates Kiro
- * and pastes the copied text into chat, submitting with Enter.
+ * Pastes the current clipboard content into Kiro's chat input.
+ * User should copy text (Ctrl+C) before pressing the button.
+ * Does NOT press Enter — allows user to add more or submit with Go.
  *
- * The Ctrl+C is sent BEFORE activating Kiro so that the copy happens in
- * the user's currently focused application. A 100ms delay allows the
- * clipboard to populate before switching to Kiro for the paste.
+ * Flow:
+ *  1. Send a brief Alt keypress to bypass Windows foreground lock.
+ *  2. Activate Kiro window.
+ *  3. Focus chat input (Ctrl+L).
+ *  4. Paste clipboard content (Ctrl+V).
  *
  * @returns ActionResult indicating success or failure.
  */
 export async function executeAsk(): Promise<ActionResult> {
-  // Copy selection from the CURRENT foreground window (not Kiro)
-  sendKeyCombo([VK.VK_CONTROL, VK.VK_C]);
+  // 1. Alt key trick: a quick Alt press releases the foreground lock
+  //    so that SetForegroundWindow succeeds from a background process.
+  sendKeyCombo([VK.VK_MENU]);
+  await sleep(50);
 
-  // Wait for clipboard to populate
-  await sleep(100);
-
-  // Now activate Kiro and paste + submit
+  // 2. Activate Kiro
   const result = await activateKiro();
   if (!result.success) return result;
 
+  // 3. Focus chat input
+  sendKeyCombo([VK.VK_CONTROL, VK.VK_L]);
+  await sleep(300);
+
+  // 4. Paste
   sendKeyCombo([VK.VK_CONTROL, VK.VK_V]);
-  sendKey(VK.VK_RETURN);
   return { success: true };
 }
 

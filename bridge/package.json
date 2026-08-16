@@ -6,7 +6,8 @@
   "scripts": {
     "build": "npx tsc",
     "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
+    "dev": "npx tsc && node dist/index.js",
+    "watch": "npx tsc --watch & node --watch dist/index.js",
     "test": "npx vitest --run"
   },
   "keywords": [],
