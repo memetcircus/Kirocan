@@ -15,6 +15,7 @@ import { join } from "node:path";
 
 import { findKiroWindow, activateWindow } from "./window-manager.js";
 import { sendKeyCombo, sendKey, typeText } from "./keyboard-simulator.js";
+import { addToBasket } from "./clipboard-basket.js";
 import type { ActionResult } from "./types.js";
 import { VK } from "./types.js";
 
@@ -126,34 +127,17 @@ export async function executeSnippet(text: string): Promise<ActionResult> {
 }
 
 /**
- * Pastes the current clipboard content into Kiro's chat input.
- * User should copy text (Ctrl+C) before pressing the button.
- * Does NOT press Enter — allows user to add more or submit with Go.
- *
- * Flow:
- *  1. Send a brief Alt keypress to bypass Windows foreground lock.
- *  2. Activate Kiro window.
- *  3. Focus chat input (Ctrl+L).
- *  4. Paste clipboard content (Ctrl+V).
+ * Adds the current clipboard content to the basket queue.
+ * Does NOT switch focus — user stays in their current app.
+ * Items are auto-pasted into Kiro when it becomes the foreground window.
  *
  * @returns ActionResult indicating success or failure.
  */
 export async function executeAsk(): Promise<ActionResult> {
-  // 1. Alt key trick: a quick Alt press releases the foreground lock
-  //    so that SetForegroundWindow succeeds from a background process.
-  sendKeyCombo([VK.VK_MENU]);
-  await sleep(50);
-
-  // 2. Activate Kiro
-  const result = await activateKiro();
-  if (!result.success) return result;
-
-  // 3. Focus chat input
-  sendKeyCombo([VK.VK_CONTROL, VK.VK_L]);
-  await sleep(300);
-
-  // 4. Paste
-  sendKeyCombo([VK.VK_CONTROL, VK.VK_V]);
+  const count = addToBasket();
+  if (count === -1) {
+    return { success: false, error: "Clipboard is empty — copy some text first" };
+  }
   return { success: true };
 }
 

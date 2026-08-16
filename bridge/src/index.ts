@@ -8,6 +8,7 @@
 import { StateMachine } from "./state-machine.js";
 import { HealthMonitor } from "./health-monitor.js";
 import { createHttpServer } from "./http-server.js";
+import { startBasketPoller, stopBasketPoller } from "./clipboard-basket.js";
 
 const PORT = 9848;
 
@@ -18,6 +19,9 @@ async function main(): Promise<void> {
 
   // Start health monitoring (polls session files every 5s)
   healthMonitor.start();
+
+  // Start clipboard basket poller (watches for Kiro foreground to auto-paste)
+  startBasketPoller();
 
   // Create and start the HTTP server
   const app = createHttpServer(stateMachine, healthMonitor);
@@ -30,6 +34,7 @@ async function main(): Promise<void> {
   const shutdown = () => {
     console.log("Shutting down KiroCan Bridge...");
     healthMonitor.stop();
+    stopBasketPoller();
     stateMachine.dispose();
     server.close(() => {
       console.log("Bridge stopped.");
