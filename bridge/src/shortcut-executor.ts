@@ -245,10 +245,20 @@ export async function executeScreenRecord(
   const capturedPaths: string[] = [];
 
   try {
-    // Capture frames at the specified interval
+    // 1. Show confirmation dialog — recording starts when user clicks OK
+    try {
+      execSync(
+        'powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show(\'Screen recording will start when you click OK. 5 frames at 500ms intervals.\', \'KiroCan Screen Record\', \'OK\', \'Information\')"',
+        { timeout: 30000 }
+      );
+    } catch {
+      return { success: false, error: "Screen record cancelled" };
+    }
+
+    // 2. Capture frames at the specified interval
     for (let i = 0; i < frameCount; i++) {
-      const filePath = join(tempDir, `frame_${i}.jpg`);
-      const psCommand = `powershell -Command "Add-Type -AssemblyName System.Windows.Forms,System.Drawing; $s=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $b=New-Object Drawing.Bitmap($s.Width,$s.Height); [Drawing.Graphics]::FromImage($b).CopyFromScreen(0,0,0,0,$b.Size); $b.Save('${filePath.replace(/'/g, "''")}',[Drawing.Imaging.ImageFormat]::Jpeg); $b.Dispose()"`;
+      const filePath = join(tempDir, `frame_${i}.png`);
+      const psCommand = `powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms,System.Drawing; $s=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $b=New-Object Drawing.Bitmap($s.Width,$s.Height); [Drawing.Graphics]::FromImage($b).CopyFromScreen(0,0,0,0,$b.Size); $b.Save('${filePath.replace(/'/g, "''")}','Png'); $b.Dispose()"`;
 
       try {
         execSync(psCommand, { timeout: 10000, stdio: "ignore" });
@@ -271,22 +281,36 @@ export async function executeScreenRecord(
       };
     }
 
-    // Activate Kiro window and paste file paths into chat
+    // 3. Activate Kiro and focus chat input
+    sendKeyCombo([VK.VK_MENU]); // Alt trick for foreground lock
+    await sleep(50);
+
     const result = await activateKiro();
     if (!result.success) {
-      return {
-        success: false,
-        error: "Kiro window not available after capture",
-      };
+      return { success: false, error: "Kiro window not available after capture" };
     }
 
-    // Type each file path into the chat input (one per line)
-    const pathsText = capturedPaths.join("\n");
-    typeText(pathsText);
+    sendKeyCombo([VK.VK_CONTROL, VK.VK_L]);
+    await sleep(300);
+
+    // 4. Paste each frame as an image into chat
+    for (const framePath of capturedPaths) {
+      // Copy image to clipboard
+      const copyCmd = `powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms,System.Drawing; $img = [System.Drawing.Image]::FromFile('${framePath.replace(/'/g, "''")}'); [System.Windows.Forms.Clipboard]::SetImage($img); $img.Dispose()"`;
+      try {
+        execSync(copyCmd, { timeout: 5000, stdio: "ignore" });
+      } catch {
+        continue;
+      }
+
+      // Paste into chat (Ctrl+V)
+      sendKeyCombo([VK.VK_CONTROL, VK.VK_V]);
+      await sleep(500); // Wait for Kiro to process the image
+    }
 
     return { success: true };
   } finally {
-    // Clean up temp directory
+    // 5. Clean up temp directory
     try {
       rmSync(tempDir, { recursive: true, force: true });
     } catch {
