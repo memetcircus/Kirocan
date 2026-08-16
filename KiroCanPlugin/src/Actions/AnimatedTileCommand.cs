@@ -22,8 +22,8 @@ namespace Loupedeck.KiroCanPlugin
 
         private const Int32 TotalFrames = 30;
         private const Int32 NormalIntervalMs = 150;   // ~7fps
-        private const Int32 WorriedIntervalMs = 100;  // 10fps
-        private const Int32 CriticalIntervalMs = 70;  // ~14fps
+        private const Int32 WorriedIntervalMs = 150;  // ~7fps
+        private const Int32 CriticalIntervalMs = 150; // ~7fps
 
         // Image cache: [spriteSet][frameIndex][tileIndex]
         private static Dictionary<String, BitmapImage[][]> _imageCache;
