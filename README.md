@@ -158,6 +158,40 @@ The **Paste To Kiro** feature lets you collect text from any app (browser, edito
 - When you click on Kiro (give it focus), all queued items are automatically pasted into the chat input
 - No focus switching happens until you manually return to Kiro
 
+## Development
+
+### Auto Rebuild & Restart (Watch Mode)
+
+During development, run the bridge with automatic TypeScript recompilation and process restart:
+
+```bash
+bridge\dev-watch.cmd
+```
+
+This starts two processes:
+- `tsc --watch` — recompiles TypeScript on every `.ts` file save
+- `node --watch` — restarts the bridge when `dist/` changes
+
+One command, zero manual rebuilds. Edit a `.ts` file, save, and the bridge restarts with fresh code within ~2 seconds.
+
+### Manual Build & Start
+
+```bash
+cd bridge
+node node_modules\typescript\bin\tsc    # compile TypeScript
+node dist\index.js                       # start bridge
+```
+
+### Full Rebuild & Deploy (Plugin + Bridge)
+
+For a complete rebuild of both the C# plugin and TypeScript bridge:
+
+```bash
+rebuild.ps1
+```
+
+This builds both projects, stops Logi services, deploys the plugin to LocalAppData, restarts the bridge, and launches Logi Plugin Service — all in one command.
+
 ## Testing
 ### Bridge Tests
 ```bash
