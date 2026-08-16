@@ -2,11 +2,11 @@ namespace Loupedeck.KiroCanPlugin
 {
     using System;
 
-    /// <summary>Copies selection and sends to Kiro chat.</summary>
+    /// <summary>Adds clipboard content to the basket queue for pasting into Kiro chat.</summary>
     public class AskCommand : PluginDynamicCommand
     {
         public AskCommand()
-            : base("Ask Kiro", "Copy selection and send to Kiro chat", "Kiro Commands") { }
+            : base("Paste To Kiro", "Add clipboard to Kiro chat basket", "Kiro Commands") { }
 
         protected override async void RunCommand(String actionParameter)
         {
