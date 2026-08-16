@@ -2,7 +2,10 @@
  * KiroCan Bridge - Health Monitor
  *
  * Reads Kiro session files from the workspace-sessions directory,
- * calculates context health percentage, and determines the health level.
+ * reads the contextUsagePercentage field, and determines the health level.
+ * Falls back to message count (working hook counter) when session files
+ * are unavailable.
+ *
  * Polls every 5 seconds via setInterval.
  *
  * @module health-monitor
@@ -10,23 +13,8 @@
 
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { statSync } from "node:fs";
 import type { HealthResponse } from "./types.js";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-/**
- * Partial schema of a Kiro session file — only the fields we need.
- */
-interface KiroSessionFile {
-  sessionId: string;
-  tokenUsage?: {
-    current: number;
-    maximum: number;
-  };
-  lastModified: string; // ISO timestamp
-}
 
 // ---------------------------------------------------------------------------
 // Pure Functions (exported for independent testing)
@@ -50,6 +38,24 @@ export function determineHealthLevel(
   return "normal";
 }
 
+/**
+ * Determines the health level based on message count (fallback).
+ *
+ * - 0–15  → "normal"
+ * - 16–25 → "worried"
+ * - 26+   → "critical"
+ *
+ * @param count - Number of working state changes (proxy for messages).
+ * @returns The corresponding health level string.
+ */
+export function determineHealthLevelByMessageCount(
+  count: number
+): HealthResponse["healthLevel"] {
+  if (count >= 26) return "critical";
+  if (count >= 16) return "worried";
+  return "normal";
+}
+
 // ---------------------------------------------------------------------------
 // HealthMonitor Class
 // ---------------------------------------------------------------------------
@@ -58,9 +64,8 @@ export function determineHealthLevel(
  * Monitors Kiro session files to track context window usage.
  *
  * Reads session JSON files from the standard %APPDATA% location every 5 seconds,
- * picks the most recently modified session, and computes the context percentage
- * and health level. Gracefully defaults to 0% / "normal" when files are missing
- * or unreadable.
+ * picks the most recently modified file, and reads the contextUsagePercentage field.
+ * Falls back to message count when session files are unavailable.
  */
 export class HealthMonitor {
   /** Directory containing Kiro workspace session files. */
@@ -72,11 +77,17 @@ export class HealthMonitor {
   /** Current calculated context usage percentage (0–100). */
   private contextPercentage: number = 0;
 
-  /** Current health level derived from contextPercentage. */
+  /** Current health level derived from contextPercentage or message count. */
   private healthLevel: HealthResponse["healthLevel"] = "normal";
 
   /** Polling interval in milliseconds (default 5000). */
   private readonly pollIntervalMs: number;
+
+  /** Whether the last poll successfully read a session file. */
+  private sessionFileAvailable: boolean = false;
+
+  /** Counter for working state changes (proxy for message count). */
+  private messageCount: number = 0;
 
   /**
    * Creates a new HealthMonitor instance.
@@ -136,12 +147,32 @@ export class HealthMonitor {
   }
 
   /**
-   * Resets context tracking to 0% / "normal".
+   * Resets context tracking to 0% / "normal" and message counter to 0.
    * Called when a new session is created.
    */
   resetContext(): void {
     this.contextPercentage = 0;
     this.healthLevel = "normal";
+    this.messageCount = 0;
+    this.sessionFileAvailable = false;
+  }
+
+  /**
+   * Increments the message counter. Called each time the working hook fires.
+   * If session files are unavailable, this drives the health level.
+   */
+  incrementMessageCount(): void {
+    this.messageCount++;
+    if (!this.sessionFileAvailable) {
+      this.updateFromMessageCount();
+    }
+  }
+
+  /**
+   * Returns the current message count.
+   */
+  getMessageCount(): number {
+    return this.messageCount;
   }
 
   // -------------------------------------------------------------------------
@@ -150,7 +181,7 @@ export class HealthMonitor {
 
   /**
    * Reads session files from the directory, finds the most recent one,
-   * and updates internal state. Defaults to 0%/normal on any error.
+   * and updates internal state. Falls back to message count on error.
    */
   private async poll(): Promise<void> {
     try {
@@ -158,59 +189,72 @@ export class HealthMonitor {
       const jsonFiles = files.filter((f) => f.endsWith(".json"));
 
       if (jsonFiles.length === 0) {
-        this.setDefaults();
+        this.sessionFileAvailable = false;
+        this.updateFromMessageCount();
         return;
       }
 
-      let mostRecentSession: KiroSessionFile | null = null;
-      let mostRecentTime = -Infinity;
+      // Find the most recently modified file
+      let mostRecentFile: string | null = null;
+      let mostRecentMtime = -Infinity;
 
       for (const file of jsonFiles) {
         try {
           const filePath = join(this.sessionDir, file);
-          const content = await readFile(filePath, "utf-8");
-          const session = JSON.parse(content) as KiroSessionFile;
-
-          // Validate required fields
-          if (!session.lastModified) continue;
-
-          const modifiedTime = new Date(session.lastModified).getTime();
-          if (isNaN(modifiedTime)) continue;
-
-          if (modifiedTime > mostRecentTime) {
-            mostRecentTime = modifiedTime;
-            mostRecentSession = session;
+          const stat = statSync(filePath);
+          const mtime = stat.mtimeMs;
+          if (mtime > mostRecentMtime) {
+            mostRecentMtime = mtime;
+            mostRecentFile = filePath;
           }
         } catch {
-          // Skip unreadable/invalid files
           continue;
         }
       }
 
-      if (
-        mostRecentSession === null ||
-        !mostRecentSession.tokenUsage ||
-        mostRecentSession.tokenUsage.maximum <= 0
-      ) {
-        this.setDefaults();
+      if (mostRecentFile === null) {
+        this.sessionFileAvailable = false;
+        this.updateFromMessageCount();
         return;
       }
 
-      const { current, maximum } = mostRecentSession.tokenUsage;
-      const rawPercentage = (current / maximum) * 100;
-      this.contextPercentage = Math.min(100, Math.max(0, Math.round(rawPercentage)));
-      this.healthLevel = determineHealthLevel(this.contextPercentage);
+      // Read and parse the session file
+      const content = await readFile(mostRecentFile, "utf-8");
+      const data = JSON.parse(content);
+
+      // Read contextUsagePercentage field
+      if (
+        typeof data.contextUsagePercentage === "number" &&
+        data.contextUsagePercentage >= 0
+      ) {
+        this.contextPercentage = Math.min(100, Math.round(data.contextUsagePercentage));
+        this.healthLevel = determineHealthLevel(this.contextPercentage);
+        this.sessionFileAvailable = true;
+      } else {
+        // Field missing or invalid — fall back to message count
+        this.sessionFileAvailable = false;
+        this.updateFromMessageCount();
+      }
     } catch {
       // Directory doesn't exist or other filesystem error
-      this.setDefaults();
+      this.sessionFileAvailable = false;
+      this.updateFromMessageCount();
     }
   }
 
   /**
-   * Resets internal state to safe defaults.
+   * Updates health level from message count (fallback when session files unavailable).
    */
-  private setDefaults(): void {
-    this.contextPercentage = 0;
-    this.healthLevel = "normal";
+  private updateFromMessageCount(): void {
+    // Convert message count to a pseudo-percentage for the /health response
+    // 0-15 → 0-59%, 16-25 → 60-74%, 26+ → 75-100%
+    if (this.messageCount >= 26) {
+      this.contextPercentage = 75 + Math.min(25, this.messageCount - 26);
+    } else if (this.messageCount >= 16) {
+      this.contextPercentage = 60 + Math.round(((this.messageCount - 16) / 10) * 14);
+    } else {
+      this.contextPercentage = Math.round((this.messageCount / 15) * 59);
+    }
+    this.healthLevel = determineHealthLevelByMessageCount(this.messageCount);
   }
 }

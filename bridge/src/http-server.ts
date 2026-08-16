@@ -348,6 +348,7 @@ export function createHttpServer(
    */
   app.post("/hook/working", (_req, res) => {
     stateMachine.setState("working");
+    healthMonitor.incrementMessageCount();
     const successResponse: SuccessResponse = { success: true };
     res.json(successResponse);
   });
