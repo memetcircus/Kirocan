@@ -21,9 +21,9 @@ namespace Loupedeck.KiroCanPlugin
         private static readonly List<AnimatedTileCommand> _instances = new List<AnimatedTileCommand>();
 
         private const Int32 TotalFrames = 30;
-        private const Int32 NormalIntervalMs = 200;   // 5fps
-        private const Int32 WorriedIntervalMs = 200;  // 5fps
-        private const Int32 CriticalIntervalMs = 200; // 5fps
+        private const Int32 NormalIntervalMs = 166;   // 6fps
+        private const Int32 WorriedIntervalMs = 166;  // 6fps
+        private const Int32 CriticalIntervalMs = 166; // 6fps
 
         // Image cache: [spriteSet][frameIndex][tileIndex]
         private static Dictionary<String, BitmapImage[][]> _imageCache;
