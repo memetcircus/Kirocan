@@ -279,4 +279,4 @@ KiroCan/
 - **No external services** — fully offline, no internet required
 
 ## License
-All Rights Reserved. See [LICENSE](./LICENSE) for details.
+MIT License. See [LICENSE](./LICENSE) for details.
