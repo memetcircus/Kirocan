@@ -1,5 +1,9 @@
 # KiroCan
 
+<p align="center">
+  <img src="assets/kiro_animation.gif" alt="KiroCan Ghost Animation" width="360" />
+</p>
+
 ## Overview
 KiroCan is a physical AI coding companion that connects the Logitech MX Creative Console hardware to Kiro IDE on Windows. Press LCD buttons to send prompts, see animated ghost feedback while Kiro processes requests, rotate a dial to navigate sessions, and capture screenshots directly into chat.
 
