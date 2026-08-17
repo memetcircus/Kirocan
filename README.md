@@ -26,22 +26,37 @@ MX Creative Console → C# Plugin (Logi Actions SDK, .NET 10) → HTTP → Bridg
 
 ## LCD Button Layout
 ### Page 1 — Snippets & Controls (animated)
-| Screenshot | Be Honest | Don't Code Yet |
-|---|---|---|
-| Show Options | Explain Why | Stop |
-| Keep Short | No Tests | Go! |
+```
+┌──────────────┬──────────────┬──────────────┐
+│  Screenshot  │  Be Honest   │Don't Code Yet│
+├──────────────┼──────────────┼──────────────┤
+│ Show Options │  Explain Why │     Stop     │
+├──────────────┼──────────────┼──────────────┤
+│  Keep Short  │   No Tests   │     Go!      │
+└──────────────┴──────────────┴──────────────┘
+```
 
 ### Page 2 — Utility Controls (no animation)
-| New Session | Struct Prompt | Inline Chat |
-|---|---|---|
-| Terminal→Chat | Screen Record | Paste To Kiro |
-| Workspace | Start Spec | Git Commit |
+```
+┌──────────────┬──────────────┬──────────────┐
+│ New Session  │Struct Prompt │ Inline Chat  │
+├──────────────┼──────────────┼──────────────┤
+│Terminal→Chat │Screen Record │Paste To Kiro │
+├──────────────┼──────────────┼──────────────┤
+│  Workspace   │  Start Spec  │  Git Commit  │
+└──────────────┴──────────────┴──────────────┘
+```
 
 ### Page 3 — Prompt Commands (animated)
-| Criticize | Refactor | Write Tests |
-|---|---|---|
-| Explain | Fix Bug | Optimize |
-| Review | Document | Simplify |
+```
+┌──────────────┬──────────────┬──────────────┐
+│  Criticize   │   Refactor   │ Write Tests  │
+├──────────────┼──────────────┼──────────────┤
+│   Explain    │   Fix Bug    │   Optimize   │
+├──────────────┼──────────────┼──────────────┤
+│    Review    │   Document   │   Simplify   │
+└──────────────┴──────────────┴──────────────┘
+```
 
 ## Ghost Animation — How It Works
 
