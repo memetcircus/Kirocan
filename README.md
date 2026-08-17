@@ -115,52 +115,33 @@ npm run build:sprites   # generates 810 tile PNGs (3 variants × 30 frames × 9 
 Source files: `assets/normal.png`, `assets/worried.png`, `assets/onfire.png` (2048×2048 RGBA)
 Output: `assets/sprites/tiles/{ghost-walk,ghost-walk-worried,ghost-walk-fire}/frame-XX-tile-Y.png`
 
+## Quick Start
+
+```bash
+git clone https://github.com/memetcircus/Kirocan.git
+cd Kirocan
+install.cmd
+```
+
+That's it. The installer checks prerequisites, builds everything, and starts the bridge. Open Logi Options+ and assign KiroCan buttons to your MX Creative Console.
+
+For detailed setup (Paste To Kiro multi-action, Kiro hooks, troubleshooting), see [SETUP.md](./SETUP.md).
+
 ## Prerequisites
 - Windows 10/11
 - [Logitech MX Creative Console](https://www.logitech.com/products/keyboards/mx-creative-console.html)
-- [Logi Plugin Service](https://www.logitech.com/software/logi-options-plus.html) installed
+- [Logi Options+](https://www.logitech.com/software/logi-options-plus.html) installed
 - [Node.js 22+](https://nodejs.org/) (LTS)
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Kiro IDE](https://kiro.dev)
 
 ## Setup Instructions
 
-### Bridge Service
-```bash
-cd bridge
-npm install
-npm run build
-npm start
-```
-The bridge listens on `http://127.0.0.1:9848`.
-
-### C# Plugin
-```bash
-cd plugin
-dotnet build
-```
-Copy the built DLL to your Logi Plugin Service plugins directory.
-
-### Kiro Hooks
-The `.kiro/hooks/` directory contains hook files that automatically signal the bridge when Kiro starts/stops working. These are included in the repository and active when the project is open in Kiro.
-
-### Paste To Kiro — Default Profile Button (Optional)
-
-The **Paste To Kiro** feature lets you collect text from any app (browser, editor, terminal) and have it automatically pasted into Kiro's chat when you switch back to Kiro. This requires a one-time manual setup in Logi Options+:
-
-1. Open **Logi Options+** → select your MX Creative Console
-2. Go to the **Default Profile** (top bar, first icon)
-3. Click an empty button slot → **System Actions** → **ADVANCED** → **Multi-action**
-4. Add two actions in this order:
-   - **Action 1**: Keyboard Shortcut → `Ctrl+C`
-   - **Action 2**: Run → browse to `bridge\paste-to-kiro.bat`
-5. Save
-
-**How it works:**
-- Select text anywhere → press the button → text is copied and queued in the bridge
-- Keep collecting from multiple tabs/apps — each press adds to the queue
-- When you click on Kiro (give it focus), all queued items are automatically pasted into the chat input
-- No focus switching happens until you manually return to Kiro
+See [SETUP.md](./SETUP.md) for the full installation guide including:
+- Bridge and plugin build steps
+- Kiro hooks configuration
+- Paste To Kiro multi-action button setup
+- Troubleshooting common issues
 
 ## Development
 
