@@ -1,7 +1,7 @@
 # KiroCan
 
 <p align="center">
-  <img src="assets/kiro_animation.gif" alt="KiroCan Ghost Animation" width="360" />
+  <img src="assets/kiro_animation.gif" alt="KiroCan Ghost Animation" width="600" />
 </p>
 
 ## Overview
