@@ -199,6 +199,21 @@ export async function executeNewSession(): Promise<ActionResult> {
 }
 
 /**
+ * Saves all open files in Kiro (Ctrl+K S).
+ *
+ * @returns ActionResult indicating success or failure.
+ */
+export async function executeSaveAll(): Promise<ActionResult> {
+  const result = await activateKiro();
+  if (!result.success) return result;
+
+  sendKeyCombo([VK.VK_CONTROL, VK.VK_K]);
+  await sleep(100);
+  sendKey(VK.VK_S);
+  return { success: true };
+}
+
+/**
  * Navigates to the next Kiro session (Ctrl+Alt+Right).
  *
  * @returns ActionResult indicating success or failure.

@@ -2,15 +2,15 @@ namespace Loupedeck.KiroMxConsolePlugin
 {
     using System;
 
-    /// <summary>Adds clipboard content to the basket queue for pasting into Kiro chat.</summary>
-    public class AskCommand : PluginDynamicCommand
+    /// <summary>Saves all open files in Kiro IDE (Ctrl+K S).</summary>
+    public class SaveAllCommand : PluginDynamicCommand
     {
-        public AskCommand()
-            : base("Paste To Kiro", "Add clipboard to Kiro chat basket", "Kiro Commands") { }
+        public SaveAllCommand()
+            : base("Save All", "Save all open files", "Utilities") { }
 
         protected override async void RunCommand(String actionParameter)
         {
-            await BridgeClient.PostAsync("/ask");
+            await BridgeClient.PostAsync("/save-all");
         }
     }
 }

@@ -34,6 +34,7 @@ import {
   executeScreenRecord,
   executeGo,
   executeStructPrompt,
+  executeSaveAll,
 } from "./shortcut-executor.js";
 
 // ---------------------------------------------------------------------------
@@ -418,6 +419,21 @@ export function createHttpServer(
    */
   app.post("/struct-prompt", async (_req, res) => {
     const result = await executeStructPrompt();
+    if (!result.success) {
+      const errorResponse: ErrorResponse = { success: false, error: result.error! };
+      res.status(503).json(errorResponse);
+      return;
+    }
+    const successResponse: SuccessResponse = { success: true };
+    res.json(successResponse);
+  });
+
+  /**
+   * POST /save-all
+   * Saves all open files in Kiro (Ctrl+K S).
+   */
+  app.post("/save-all", async (_req, res) => {
+    const result = await executeSaveAll();
     if (!result.success) {
       const errorResponse: ErrorResponse = { success: false, error: result.error! };
       res.status(503).json(errorResponse);
