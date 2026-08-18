@@ -10,35 +10,33 @@ KiroCan is a physical AI coding companion that connects the Logitech MX Creative
 ## Architecture
 
 ```mermaid
-graph LR
-    subgraph Hardware
-        MX[🎛️ MX Creative Console]
-    end
-
-    subgraph "Logi Plugin Service (.NET 10)"
-        Plugin[C# Plugin]
+graph TD
+    MX["🎛️ MX Creative Console"]
+    
+    subgraph Plugin ["C# Plugin (.NET 10)"]
+        Actions[Button Actions]
         Anim[Animation Engine]
     end
 
-    subgraph "Bridge (localhost:9848)"
+    subgraph Bridge ["Bridge (localhost:9848)"]
         HTTP[HTTP Server]
         KeySim[Keyboard Simulator]
-        Health[Health Monitor]
         State[State Machine]
+        Health[Health Monitor]
     end
 
-    subgraph "Kiro IDE"
+    subgraph IDE ["Kiro IDE"]
         KiroWin[Kiro Window]
         Hooks[Kiro Hooks]
     end
 
-    MX -->|Button Press| Plugin
-    Plugin -->|HTTP POST| HTTP
+    MX -->|"Button Press"| Actions
+    Actions -->|"HTTP POST"| HTTP
     HTTP --> KeySim
-    KeySim -->|Win32 SendInput| KiroWin
-    Hooks -->|POST /hook| HTTP
-    Plugin -->|Poll /health| HTTP
-    Anim -->|LCD Bitmaps| MX
+    KeySim -->|"Win32 SendInput"| KiroWin
+    Hooks -->|"POST /hook/working"| State
+    Actions -->|"Poll /health"| Health
+    Anim -->|"LCD Bitmaps"| MX
 ```
 
 ```
