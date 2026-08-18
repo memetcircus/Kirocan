@@ -4,7 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
-    <RootNamespace>Loupedeck.KiroCanPlugin</RootNamespace>
+    <RootNamespace>Loupedeck.KiroMxConsolePlugin</RootNamespace>
+    <AssemblyName>KiroMxConsolePlugin</AssemblyName>
 
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -37,6 +38,11 @@
     <EmbeddedResource Include="..\..\assets\sprites\tiles\ghost-walk-fire\*.png" Link="Sprites\ghost-walk-fire\%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <!-- Embed bridge executable as resource for extraction at runtime -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\bin\kirocan-bridge.exe" LogicalName="kirocan-bridge.exe" Condition="Exists('..\bin\kirocan-bridge.exe')" />
+  </ItemGroup>
+
   <Target Name="CopyPackage" AfterTargets="PostBuildEvent">
     <Message Text="📦 Copying package files..." Importance="High" />
     <ItemGroup>
@@ -44,6 +50,17 @@
     </ItemGroup>
     <Copy SourceFiles="@(PackageFiles)" DestinationFolder="$(OutputPath)..\%(RecursiveDir)" />
     <Message Text="✅ Package files copied to $(OutputPath)..\" Importance="High" />
+  </Target>
+
+  <Target Name="CopyBridgeExe" AfterTargets="Build">
+    <Message Text="📦 Copying bridge executable..." Importance="High" />
+    <Copy
+      SourceFiles="..\bin\kirocan-bridge.exe"
+      DestinationFolder="$(OutputPath)"
+      Condition="Exists('..\bin\kirocan-bridge.exe')"
+      SkipUnchangedFiles="true" />
+    <Message Condition="Exists('..\bin\kirocan-bridge.exe')" Text="✅ kirocan-bridge.exe copied to $(OutputPath)" Importance="High" />
+    <Message Condition="!Exists('..\bin\kirocan-bridge.exe')" Text="⚠️ kirocan-bridge.exe not found at ..\bin\ — skipping (run bun build --compile first)" Importance="High" />
   </Target>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

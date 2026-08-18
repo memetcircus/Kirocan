@@ -14,9 +14,7 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
-    "express": "4.21.2",
-    "koffi": "2.16.3",
-    "clipboardy": "4.0.0"
+    "express": "4.21.2"
   },
   "devDependencies": {
     "@types/express": "5.0.1",

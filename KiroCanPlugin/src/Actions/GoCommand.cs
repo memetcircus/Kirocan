@@ -1,4 +1,4 @@
-namespace Loupedeck.KiroCanPlugin
+namespace Loupedeck.KiroMxConsolePlugin
 {
     using System;
 

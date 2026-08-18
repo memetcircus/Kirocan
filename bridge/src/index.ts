@@ -5,6 +5,14 @@
  * Handles graceful shutdown on SIGTERM/SIGINT.
  */
 
+// Global error handlers — prevent process crash from unhandled exceptions
+process.on("uncaughtException", (err) => {
+  console.error("[UNCAUGHT]", err.message);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("[UNHANDLED REJECTION]", reason);
+});
+
 import { StateMachine } from "./state-machine.js";
 import { HealthMonitor } from "./health-monitor.js";
 import { createHttpServer } from "./http-server.js";

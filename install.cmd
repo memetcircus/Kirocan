@@ -1,6 +1,6 @@
 @echo off
 :: KiroCan One-Click Installer
-:: Prerequisites: Node.js 22+, .NET 10 SDK, Logi Options+
+:: Prerequisites: .NET 10 SDK, Bun, Logi Options+
 :: Double-click this file or run from terminal.
 
 echo.
@@ -8,16 +8,6 @@ echo ========================================
 echo   KiroCan Installer
 echo ========================================
 echo.
-
-:: Check Node.js
-where node >nul 2>&1
-if errorlevel 1 (
-    echo [ERROR] Node.js not found. Install from https://nodejs.org/
-    echo.
-    pause
-    exit /b 1
-)
-for /f "tokens=*" %%i in ('node --version') do echo [OK] Node.js %%i
 
 :: Check .NET SDK
 where dotnet >nul 2>&1
@@ -29,44 +19,55 @@ if errorlevel 1 (
 )
 for /f "tokens=*" %%i in ('dotnet --version') do echo [OK] .NET SDK %%i
 
+:: Check Bun
+set BUN_EXE=bun
+where bun >nul 2>&1
+if errorlevel 1 (
+    if exist "%USERPROFILE%\.bun\bin\bun.exe" (
+        set BUN_EXE=%USERPROFILE%\.bun\bin\bun.exe
+        echo [OK] Bun found at %USERPROFILE%\.bun\bin\bun.exe
+    ) else (
+        echo [ERROR] Bun not found. Install with: powershell -c "irm bun.sh/install.ps1 | iex"
+        echo.
+        pause
+        exit /b 1
+    )
+) else (
+    for /f "tokens=*" %%i in ('bun --version') do echo [OK] Bun %%i
+)
+
 echo.
-echo [1/4] Installing bridge dependencies...
+echo [1/3] Compiling bridge to standalone exe...
 cd /d "%~dp0bridge"
-call npm install --silent
+call npm install --silent 2>nul
+%BUN_EXE% build --compile --target=bun-windows-x64 src\index.ts --outfile ..\KiroCanPlugin\bin\kirocan-bridge.exe
 if errorlevel 1 (
-    echo [ERROR] npm install failed
+    echo [ERROR] Bridge compilation failed
     pause
     exit /b 1
 )
+echo   Bridge compiled successfully
 
-echo [2/4] Building bridge (TypeScript)...
-call node node_modules\typescript\bin\tsc
-if errorlevel 1 (
-    echo [ERROR] TypeScript build failed
-    pause
-    exit /b 1
-)
-
-echo [3/4] Building plugin (C#)...
+echo [2/3] Building plugin (C#)...
 cd /d "%~dp0KiroCanPlugin\src"
-dotnet build --nologo -v q
+dotnet build -c Release --nologo -v q
 if errorlevel 1 (
     echo [ERROR] Plugin build failed
     pause
     exit /b 1
 )
+echo   Plugin built and registered with Logi Plugin Service
 
-echo [4/4] Starting bridge...
-cd /d "%~dp0bridge"
-start "KiroCan Bridge" cmd /c "node dist\index.js"
+echo [3/3] Restarting Logi Plugin Service...
+start loupedeck:plugin/KiroCan/reload 2>nul
 
 echo.
 echo ========================================
 echo   Installation complete!
 echo ========================================
 echo.
-echo   Bridge running on http://127.0.0.1:9848
 echo   Plugin registered with Logi Options+
+echo   Bridge will start automatically when plugin loads
 echo.
 echo   Next steps:
 echo   1. Open Logi Options+

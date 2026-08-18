@@ -1,89 +1,74 @@
-# KiroCan Full Rebuild & Deploy
-# Builds bridge (TypeScript) + plugin (C#), deploys plugin, restarts services.
-# Usage: Right-click -> Run with PowerShell, or from terminal: .\rebuild.ps1
+# KiroCan Quick Rebuild & Deploy
+# Rebuilds bridge + plugin and restarts Logi Plugin Service.
+# For full release builds with .lplug4 packaging, use: .\scripts\build-release.ps1
+#
+# Usage: .\rebuild.ps1
 
 $ErrorActionPreference = "Stop"
 $repoRoot = $PSScriptRoot
 $bridgeDir = "$repoRoot\bridge"
-$pluginDir = "$repoRoot\plugin"
-$buildOutput = "$pluginDir\bin\Release\net10.0"
-$dest = "$env:LOCALAPPDATA\Logi\LogiPluginService\Plugins\KiroCan"
+$pluginSrcDir = "$repoRoot\KiroCanPlugin\src"
+$pluginBinDir = "$repoRoot\KiroCanPlugin\bin"
 
-Write-Host "=== KiroCan Full Rebuild ===" -ForegroundColor Cyan
+Write-Host "=== KiroCan Quick Rebuild ===" -ForegroundColor Cyan
 Write-Host ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 1. Bridge: TypeScript build
+# 1. Compile bridge to standalone exe
 # ─────────────────────────────────────────────────────────────────────────────
-Write-Host "[1/5] Building Bridge (TypeScript)..." -ForegroundColor Yellow
-Set-Location $bridgeDir
-node node_modules\typescript\bin\tsc
+Write-Host "[1/4] Compiling bridge (bun build --compile)..." -ForegroundColor Yellow
+
+$bunExe = "$env:USERPROFILE\.bun\bin\bun.exe"
+if (-not (Test-Path $bunExe)) {
+    $bunExe = "bun"
+}
+
+$bridgeExePath = "$pluginBinDir\kirocan-bridge.exe"
+& $bunExe build --compile --target=bun-windows-x64 "$bridgeDir\src\index.ts" --outfile $bridgeExePath
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "BRIDGE BUILD FAILED" -ForegroundColor Red
+    Write-Host "BRIDGE COMPILE FAILED" -ForegroundColor Red
     pause
     exit 1
 }
-Write-Host "  Bridge build OK" -ForegroundColor Green
+Write-Host "  Bridge compiled ($([math]::Round((Get-Item $bridgeExePath).Length / 1MB, 1)) MB)" -ForegroundColor Green
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 2. Plugin: C# build
+# 2. Build C# plugin
 # ─────────────────────────────────────────────────────────────────────────────
-Write-Host "[2/5] Building Plugin (C#)..." -ForegroundColor Yellow
-Set-Location $pluginDir
-dotnet build -c Release --nologo -v q
+Write-Host "[2/4] Building plugin (C#)..." -ForegroundColor Yellow
+
+$dotnetExe = "C:\Program Files\dotnet\dotnet.exe"
+if (-not (Test-Path $dotnetExe)) { $dotnetExe = "dotnet" }
+
+& $dotnetExe build -c Release --nologo -v q $pluginSrcDir
 if ($LASTEXITCODE -ne 0) {
     Write-Host "PLUGIN BUILD FAILED" -ForegroundColor Red
     pause
     exit 1
 }
-Write-Host "  Plugin build OK" -ForegroundColor Green
+Write-Host "  Plugin built" -ForegroundColor Green
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. Stop Logi processes
+# 3. Kill old bridge process (if running standalone)
 # ─────────────────────────────────────────────────────────────────────────────
-Write-Host "[3/5] Stopping Logi processes..." -ForegroundColor Yellow
-Stop-Process -Name "Logi*" -Force -ErrorAction SilentlyContinue
-Start-Sleep -Seconds 2
-Write-Host "  Logi stopped" -ForegroundColor Green
+Write-Host "[3/4] Stopping old bridge processes..." -ForegroundColor Yellow
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 4. Deploy plugin
-# ─────────────────────────────────────────────────────────────────────────────
-Write-Host "[4/5] Deploying plugin..." -ForegroundColor Yellow
-if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
-New-Item -ItemType Directory -Path "$dest\metadata" -Force | Out-Null
-
-$excludeFiles = @("PluginApi.dll", "PluginApi.xml")
-Get-ChildItem "$buildOutput\*" | Where-Object { $_.Name -notin $excludeFiles } | Copy-Item -Destination $dest -Recurse -Force
-Copy-Item "$pluginDir\metadata\LoupedeckPackage.yaml" "$dest\metadata\" -Force
-Write-Host "  Plugin deployed to $dest" -ForegroundColor Green
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 5. Restart bridge + open Logi Options+
-# ─────────────────────────────────────────────────────────────────────────────
-Write-Host "[5/5] Restarting bridge..." -ForegroundColor Yellow
-
-# Kill old bridge if running
+Get-Process -Name "kirocan-bridge" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Get-Process -Name "node" -ErrorAction SilentlyContinue | Where-Object {
-    $_.CommandLine -like "*kirocan-bridge*" -or $_.CommandLine -like "*bridge\dist*"
+    try { $_.CommandLine -like "*bridge*dist*" } catch { $false }
 } | Stop-Process -Force -ErrorAction SilentlyContinue
+Write-Host "  Old processes stopped" -ForegroundColor Green
 
-# Start bridge in background
-Start-Process -NoNewWindow -FilePath "node" -ArgumentList "$bridgeDir\dist\index.js" -WorkingDirectory $bridgeDir
-Write-Host "  Bridge started" -ForegroundColor Green
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. Reload plugin (triggers bridge auto-start)
+# ─────────────────────────────────────────────────────────────────────────────
+Write-Host "[4/4] Reloading plugin..." -ForegroundColor Yellow
 
-# Launch Logi Options+
-$logiExe = "$env:ProgramFiles\Logi\LogiPluginService\LogiPluginService.exe"
-if (Test-Path $logiExe) {
-    Start-Process $logiExe
-    Write-Host "  Logi Plugin Service started" -ForegroundColor Green
-} else {
-    Write-Host "  Logi Plugin Service not found — open Logi Options+ manually" -ForegroundColor DarkYellow
-}
+Start-Process "loupedeck:plugin/KiroCan/reload" -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 2
+Write-Host "  Plugin reload signal sent" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "=== Done! ===" -ForegroundColor Cyan
-Write-Host "Bridge running on http://localhost:9848"
-Write-Host "Open Logi Options+ to activate the plugin."
-
-Set-Location $repoRoot
+Write-Host "Plugin reloaded - bridge starts automatically on plugin load."
+Write-Host "Open Logi Options+ to verify."
