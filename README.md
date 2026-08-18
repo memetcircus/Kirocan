@@ -5,24 +5,114 @@
 </p>
 
 ## Overview
-KiroCan is a physical AI coding companion that connects the Logitech MX Creative Console hardware to Kiro IDE on Windows. Press LCD buttons to send prompts, see animated ghost feedback while Kiro processes requests, rotate a dial to navigate sessions, and capture screenshots directly into chat.
+KiroCan is a physical AI coding companion that connects the Logitech MX Creative Console hardware to Kiro IDE on Windows. Press LCD buttons to send prompts, see animated ghost feedback while Kiro processes requests, and capture screenshots directly into chat.
 
 ## Architecture
-```
-MX Creative Console → C# Plugin (Logi Actions SDK, .NET 10) → HTTP → Bridge Service (Node.js/TypeScript) → Kiro IDE (Win32 keyboard simulation)
+
+```mermaid
+graph LR
+    subgraph Hardware
+        MX[🎛️ MX Creative Console]
+    end
+
+    subgraph "Logi Plugin Service (.NET 10)"
+        Plugin[C# Plugin]
+        Anim[Animation Engine]
+    end
+
+    subgraph "Bridge (localhost:9848)"
+        HTTP[HTTP Server]
+        KeySim[Keyboard Simulator]
+        Health[Health Monitor]
+        State[State Machine]
+    end
+
+    subgraph "Kiro IDE"
+        KiroWin[Kiro Window]
+        Hooks[Kiro Hooks]
+    end
+
+    MX -->|Button Press| Plugin
+    Plugin -->|HTTP POST| HTTP
+    HTTP --> KeySim
+    KeySim -->|Win32 SendInput| KiroWin
+    Hooks -->|POST /hook| HTTP
+    Plugin -->|Poll /health| HTTP
+    Anim -->|LCD Bitmaps| MX
 ```
 
+```
+MX Creative Console → C# Plugin (Logi Actions SDK, .NET 10)
+                         ↓ extracts + spawns on load
+                      Bridge (embedded in DLL as resource → %LOCALAPPDATA%\KiroCan\)
+                         ↓ Win32 keyboard simulation via PowerShell
+                      Kiro IDE
+```
+
+The bridge is compiled into a standalone executable and embedded as a resource inside the plugin DLL. On first load, the plugin extracts it to `%LOCALAPPDATA%\KiroCan\kirocan-bridge.exe` and spawns it automatically. No terminal, no Node.js, no npm required for end users.
+
+### Data Flow
+
+1. **Command flow** (user → IDE): Button press → Plugin → HTTP → Bridge → Win32 keystrokes → Kiro
+2. **State flow** (IDE → hardware): Kiro Hook → Bridge state machine → Plugin polls `/health` → Animation updates on LCD
+3. **Health flow**: Bridge reads session files → calculates context % → Plugin adjusts ghost sprite variant
+
 ## Features
-- 🎬 **Ghost Animation** — 30-frame animated Kiro ghost across 9 LCD buttons while Kiro is working
-- 📊 **Context Health** — Visual indicator showing context window usage (normal/worried/critical)
-- 📸 **Screenshot → Chat** — One button to capture screen region and paste into Kiro
-- 🎥 **Screen Record → Chat** — Capture frame sequences for visual analysis
-- 📋 **Paste To Kiro** — Select text in any app, press button to queue it; auto-pastes when you return to Kiro
-- ⏹️ **Stop/Cancel** — Physical button to immediately cancel Kiro generation
-- 🔄 **Session Navigate** — Dial rotation to switch between Kiro sessions
-- 💬 **9 Prompt Commands** — Explain, Criticize, Document, Fix Bug, Optimize, Refactor, Review, Simplify, Write Tests
-- ✏️ **6 Snippet Buttons** — Append qualifiers to chat without sending
-- 🚀 **Utility Controls** — New Session, Inline Chat, Terminal→Chat, Git Commit, Start Spec, Understand Workspace
+- **Ghost Animation** — 30-frame animated Kiro ghost across 9 LCD buttons while Kiro is working
+- **Context Health** — Visual indicator showing context window usage (normal/worried/critical)
+- **Screenshot → Chat** — One button to capture screen region and paste into Kiro
+- **Screen Record → Chat** — Capture frame sequences for visual analysis
+- **Paste To Kiro** — Select text in any app, press button to queue it; auto-pastes when you return to Kiro
+- **Stop/Cancel** — Physical button to immediately cancel Kiro generation
+- **9 Prompt Commands** — Explain, Criticize, Document, Fix Bug, Optimize, Refactor, Review, Simplify, Write Tests
+- **6 Snippet Buttons** — Append qualifiers to chat without sending
+- **Utility Controls** — New Session, Inline Chat, Terminal→Chat, Git Commit, Start Spec, Understand Workspace
+
+## Quick Start (End Users)
+
+### Option A: Install from .lplug4 package (recommended)
+
+1. Download the latest `KiroCan.lplug4` from [Releases](https://github.com/memetcircus/Kirocan/releases)
+2. Double-click to install — Logi Options+ handles the rest
+3. Open Logi Options+ → select MX Creative Console → assign KiroCan buttons
+4. Done. The bridge starts automatically when the plugin loads — no terminal needed.
+
+### Option B: Build from source
+
+```bash
+git clone https://github.com/memetcircus/Kirocan.git
+cd Kirocan
+.\scripts\build-release.ps1
+```
+
+This compiles the bridge to a standalone exe, embeds it in the C# plugin DLL, and registers the plugin with Logi Plugin Service.
+
+## Prerequisites
+
+### For end users (Option A)
+- Windows 10/11
+- [Logitech MX Creative Console](https://www.logitech.com/products/keyboards/mx-creative-console.html)
+- [Logi Options+](https://www.logitech.com/software/logi-options-plus.html) installed
+- [Kiro IDE](https://kiro.dev)
+
+That's it. No Node.js, no .NET SDK, no build tools needed.
+
+### For building from source (Option B)
+All of the above, plus:
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [Bun](https://bun.sh) (for compiling bridge to standalone exe)
+
+### For development
+All of the above, plus:
+- [Node.js 22+](https://nodejs.org/) (for running bridge in dev mode with hot reload)
+
+## Setup Instructions
+
+See [SETUP.md](./SETUP.md) for detailed instructions including:
+- Logi Options+ button assignment
+- Kiro hooks configuration
+- Paste To Kiro multi-action button setup
+- Troubleshooting common issues
 
 ## LCD Button Layout
 ### Page 1 — Snippets & Controls (animated)
@@ -78,30 +168,14 @@ The 9 LCD buttons on the MX Creative Console form a unified **360×360px virtual
          = 360×360px unified canvas
 ```
 
-### Tile-to-Button Assignment (Page 1)
-
-| Tile | Position | Button Function |
-|------|----------|-----------------|
-| 0 | Top-Left | Screenshot |
-| 1 | Top-Center | Be Honest |
-| 2 | Top-Right | Don't Code Yet |
-| 3 | Middle-Left | Show Options |
-| 4 | Middle-Center | Explain Why |
-| 5 | Middle-Right | Stop |
-| 6 | Bottom-Left | Keep Short |
-| 7 | Bottom-Center | No Tests |
-| 8 | Bottom-Right | Go! |
-
 ### Animation Cycle
 
 1. Kiro starts working → Bridge sets state to "working" via hook
 2. Plugin polls `/health` every 500ms, detects "working" state
-3. AnimationEngine starts: loops through 30 frames at 10fps (100ms/frame)
-4. Each frame: ghost sprite (270×270px) is composited onto the 360×360 purple canvas at a calculated (x, y) position
-5. The canvas is split into 9 tiles of 120×120px
-6. Each tile is sent to the corresponding LCD button via `BitmapImage.FromArray(byte[])`
-7. All 9 buttons update simultaneously → appears as one large animation
-8. Kiro finishes → state becomes "idle" → animation stops, static icons restored
+3. AnimationEngine starts: loops through 30 frames at 7fps
+4. Each frame: the corresponding tile PNG is loaded from embedded resources
+5. All 9 buttons update simultaneously → appears as one large animation
+6. Kiro finishes → state becomes "idle" → animation stops, button labels restored
 
 ### Walk Pattern (30 frames)
 
@@ -112,85 +186,65 @@ The 9 LCD buttons on the MX Creative Console form a unified **360×360px virtual
 
 ### Context Health Variants
 
-| Health Level | Context Usage | Sprite Set | Animation Speed |
+| Health Level | Context Usage | Sprite Set | Visual |
 |---|---|---|---|
-| Normal | 0–59% | `ghost-walk/` | 10fps (100ms/frame) |
-| Worried | 60–74% | `ghost-walk-worried/` | 15fps (67ms/frame) |
-| Critical | 75%+ | `ghost-walk-fire/` (flaming hair) | 20fps (50ms/frame) |
+| Normal | 0–59% | `ghost-walk/` | Standard ghost |
+| Worried | 60–74% | `ghost-walk-worried/` | Worried expression |
+| Critical | 75%+ | `ghost-walk-fire/` | Flaming hair |
 
 ### Sprite Generation
 
 Run `npm run build:sprites` to regenerate all animation tiles from the source PNGs:
 
 ```bash
-npm install   # installs Jimp
+cd Kirocan
+npm install   # installs Jimp (root package.json)
 npm run build:sprites   # generates 810 tile PNGs (3 variants × 30 frames × 9 tiles)
 ```
 
 Source files: `assets/normal.png`, `assets/worried.png`, `assets/onfire.png` (2048×2048 RGBA)
 Output: `assets/sprites/tiles/{ghost-walk,ghost-walk-worried,ghost-walk-fire}/frame-XX-tile-Y.png`
 
-## Quick Start
-
-```bash
-git clone https://github.com/memetcircus/Kirocan.git
-cd Kirocan
-install.cmd
-```
-
-That's it. The installer checks prerequisites, builds everything, and starts the bridge. Open Logi Options+ and assign KiroCan buttons to your MX Creative Console.
-
-For detailed setup (Paste To Kiro multi-action, Kiro hooks, troubleshooting), see [SETUP.md](./SETUP.md).
-
-## Prerequisites
-- Windows 10/11
-- [Logitech MX Creative Console](https://www.logitech.com/products/keyboards/mx-creative-console.html)
-- [Logi Options+](https://www.logitech.com/software/logi-options-plus.html) installed
-- [Node.js 22+](https://nodejs.org/) (LTS)
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [Kiro IDE](https://kiro.dev)
-
-## Setup Instructions
-
-See [SETUP.md](./SETUP.md) for the full installation guide including:
-- Bridge and plugin build steps
-- Kiro hooks configuration
-- Paste To Kiro multi-action button setup
-- Troubleshooting common issues
-
 ## Development
 
-### Auto Rebuild & Restart (Watch Mode)
+### Bridge Development (hot reload)
 
-During development, run the bridge with automatic TypeScript recompilation and process restart:
+For active bridge development, run it directly with Node.js for fast iteration:
 
+```bash
+cd bridge
+npm install
+npm run dev          # build + start once
+```
+
+Or with auto-reload on file changes:
 ```bash
 bridge\dev-watch.cmd
 ```
 
-This starts two processes:
-- `tsc --watch` — recompiles TypeScript on every `.ts` file save
-- `node --watch` — restarts the bridge when `dist/` changes
+When running the bridge manually in dev mode, the plugin detects it's already running on port 9848 and skips spawning the embedded exe.
 
-One command, zero manual rebuilds. Edit a `.ts` file, save, and the bridge restarts with fresh code within ~2 seconds.
-
-### Manual Build & Start
+### Plugin Development
 
 ```bash
-cd bridge
-node node_modules\typescript\bin\tsc    # compile TypeScript
-node dist\index.js                       # start bridge
+cd KiroCanPlugin\src
+dotnet build
 ```
 
-### Full Rebuild & Deploy (Plugin + Bridge)
+The build creates a `.link` file so Logi Plugin Service loads the plugin from the build output directory. Changes take effect after Logi Options+ restart.
 
-For a complete rebuild of both the C# plugin and TypeScript bridge:
+### Full Release Build
 
-```bash
-rebuild.ps1
+```powershell
+.\scripts\build-release.ps1
 ```
 
-This builds both projects, stops Logi services, deploys the plugin to LocalAppData, restarts the bridge, and launches Logi Plugin Service — all in one command.
+This:
+1. Compiles bridge to standalone exe via `bun build --compile`
+2. Builds C# plugin (Release configuration)
+3. Verifies PluginApi.dll is excluded from output
+4. Verifies kirocan-bridge.exe is in output
+5. Packages as .lplug4 (if LogiPluginTool is available)
 
 ## Testing
 ### Bridge Tests
@@ -224,43 +278,45 @@ KiroCan/
 ├── .kiro/                      # Kiro specs, hooks, steering
 │   ├── specs/kirocan/          # Requirements, design, tasks
 │   └── hooks/                  # Working/idle state detection hooks
-├── plugin/                     # C# Logi plugin (.NET 10)
+├── KiroCanPlugin/              # C# Logi plugin (.NET 10)
 │   ├── src/
-│   │   ├── KiroCanPlugin.cs    # Plugin entry point
+│   │   ├── KiroCanPlugin.cs    # Plugin entry point + bridge extract/spawn lifecycle
 │   │   ├── KiroCanApplication.cs  # Bridge polling & state
 │   │   ├── PageLayout.cs       # 3-page button layout
-│   │   ├── Animation/          # Ghost animation engine
 │   │   └── Actions/            # Button action handlers
-│   └── tests/                  # xUnit + FsCheck tests
-├── bridge/                     # Node.js/TypeScript bridge
+│   └── bin/
+│       └── kirocan-bridge.exe  # Compiled bridge (embedded as resource in DLL)
+├── bridge/                     # Bridge source (TypeScript)
 │   ├── src/
-│   │   ├── index.ts            # Entry point (port 9848)
+│   │   ├── index.ts            # Entry point (port 9848) + crash protection
 │   │   ├── http-server.ts      # Express HTTP endpoints
 │   │   ├── state-machine.ts    # Working/idle state + suppression
 │   │   ├── health-monitor.ts   # Context health from session files
 │   │   ├── clipboard-basket.ts # Paste To Kiro queue + auto-flush
-│   │   ├── window-manager.ts   # Win32 window activation
-│   │   ├── keyboard-simulator.ts  # Win32 SendInput
+│   │   ├── window-manager.ts   # Window activation (PowerShell)
+│   │   ├── keyboard-simulator.ts  # Keystroke simulation (PowerShell)
 │   │   └── shortcut-executor.ts   # High-level action orchestrator
 │   ├── paste-to-kiro.bat       # Helper for Logi Multi-action setup
 │   ├── dev-watch.cmd           # Auto rebuild + restart for development
 │   └── package.json
-├── assets/                     # Ghost sprites (placeholder)
-└── README.md
+├── scripts/
+│   └── build-release.ps1       # Full release build script
+├── assets/                     # Ghost sprite source + generated tiles
+├── README.md
+├── SETUP.md                    # Detailed setup guide
+└── LICENSE
 ```
 
 ## Third-Party Libraries
 
-### Bridge (Node.js)
+### Bridge (TypeScript → compiled to standalone exe)
 | Library | Version | Purpose | License |
 |---------|---------|---------|---------|
 | express | 4.21.2 | HTTP server | MIT |
-| koffi | 2.9.3 | Win32 FFI bindings | MIT |
-| clipboardy | 4.0.0 | Clipboard access | MIT |
-| vitest | 3.1.3 | Test runner | MIT |
-| fast-check | 3.23.2 | Property-based testing | MIT |
-| supertest | 7.1.0 | HTTP testing | MIT |
-| typescript | 5.8.3 | TypeScript compiler | Apache-2.0 |
+| vitest | 3.1.3 | Test runner (dev only) | MIT |
+| fast-check | 3.23.2 | Property-based testing (dev only) | MIT |
+| supertest | 7.1.0 | HTTP testing (dev only) | MIT |
+| typescript | 5.8.3 | TypeScript compiler (dev only) | Apache-2.0 |
 
 ### Plugin (C#)
 | Library | Purpose | License |
@@ -268,6 +324,11 @@ KiroCan/
 | PluginApi.dll | Logi Actions SDK | Logitech proprietary |
 | xUnit | Test framework | Apache-2.0 |
 | FsCheck.Xunit | Property-based testing | BSD-3-Clause |
+
+### Build Tools
+| Tool | Purpose | License |
+|------|---------|---------|
+| Bun | Compiles bridge to standalone exe | MIT |
 
 ## API Costs & Rate Limits
 - **No API costs** — all communication is local (HTTP on localhost:9848)
