@@ -154,7 +154,9 @@ export async function executeAsk(): Promise<ActionResult> {
 }
 
 /**
- * Opens Kiro's inline editing mode at the current cursor position (Ctrl+I).
+ * Opens Kiro chat with the currently selected code as context (Ctrl+L).
+ * In Kiro 1.0, inline chat was replaced by "Ask Kiro" — selecting code
+ * and pressing Ctrl+L sends it to the chat panel as context.
  *
  * @returns ActionResult indicating success or failure.
  */
@@ -162,7 +164,7 @@ export async function executeInlineChat(): Promise<ActionResult> {
   const result = await activateKiro();
   if (!result.success) return result;
 
-  sendKeyCombo([VK.VK_CONTROL, VK.VK_I]);
+  sendKeyCombo([VK.VK_CONTROL, VK.VK_L]);
   return { success: true };
 }
 

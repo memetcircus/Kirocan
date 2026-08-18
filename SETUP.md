@@ -80,7 +80,9 @@ This feature lets you select text in any app, press a button, and it queues up. 
 2. Click an empty button → **System Actions** → **ADVANCED** → **Multi-action**
 3. Add two actions in order:
    - **Action 1**: Keyboard Shortcut → `Ctrl+C`
-   - **Action 2**: Run → browse to `bridge\paste-to-kiro.bat`
+   - **Action 2**: Run → browse to `paste-to-kiro.bat`:
+     - If installed via .lplug4: `%LOCALAPPDATA%\Logi\LogiPluginService\Plugins\KiroCan\bin\paste-to-kiro.bat`
+     - If built from source: `bridge\paste-to-kiro.bat` (in the repo folder)
 4. Save
 
 **Usage:** Select text in any app → press button → switch to Kiro → text auto-pastes into chat.
