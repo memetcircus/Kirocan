@@ -1,21 +1,39 @@
-/**
+﻿/**
  * KiroCan Bridge - Clipboard Basket
  *
  * Collects clipboard text snippets in a queue (the "basket") without
  * switching window focus. A background poller watches for Kiro to become
  * the foreground window; when it does, all queued snippets are pasted
  * into the chat input and the basket is cleared.
- *
- * No native addons — uses PowerShell for clipboard and foreground detection.
  */
 
 import { execSync } from "node:child_process";
-import { writeFileSync, unlinkSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import koffi from "koffi";
 import { sendKeyCombo } from "./keyboard-simulator.js";
 import { VK } from "./types.js";
-import { isKiroForeground } from "./window-manager.js";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { writeFileSync, unlinkSync } from "node:fs";
+
+// ---------------------------------------------------------------------------
+// Win32 Bindings for foreground check
+// ---------------------------------------------------------------------------
+
+const user32 = koffi.load("user32.dll");
+const kernel32 = koffi.load("kernel32.dll");
+const psapi = koffi.load("psapi.dll");
+
+const GetForegroundWindow = user32.func("GetForegroundWindow", "void *", []);
+const GetWindowThreadProcessId = user32.func(
+  "uint32_t __stdcall GetWindowThreadProcessId(void *hWnd, _Out_ uint32_t *lpdwProcessId)"
+);
+const OpenProcess = kernel32.func("OpenProcess", "void *", ["uint32", "int", "uint32"]);
+const CloseHandle = kernel32.func("CloseHandle", "int", ["void *"]);
+const GetModuleFileNameExW = psapi.func(
+  "uint32_t __stdcall GetModuleFileNameExW(void *hProcess, void *hModule, _Out_ uint16_t *lpFilename, uint32_t nSize)"
+);
+
+const PROCESS_QUERY_AND_READ = 0x0410;
 
 // ---------------------------------------------------------------------------
 // Basket State
@@ -68,6 +86,42 @@ export function getBasketSize(): number {
 }
 
 /**
+ * Checks if the Kiro process owns the current foreground window.
+ * Uses koffi Win32 bindings directly ΓÇö no PowerShell overhead.
+ */
+function isKiroForeground(): boolean {
+  try {
+    // Get foreground window handle
+    const fgHwnd = GetForegroundWindow();
+    if (fgHwnd === null) return false;
+
+    // Get the process ID of the foreground window
+    const pidOut: [number | null] = [null];
+    GetWindowThreadProcessId(fgHwnd, pidOut);
+    const pid = pidOut[0];
+    if (!pid || pid === 0) return false;
+
+    // Open the process and get its executable name
+    const hProcess = OpenProcess(PROCESS_QUERY_AND_READ, 0, pid);
+    if (hProcess === null) return false;
+
+    try {
+      const MAX_PATH = 260;
+      const buf = Buffer.alloc(MAX_PATH * 2);
+      const len = GetModuleFileNameExW(hProcess, null, buf, MAX_PATH);
+      if (len === 0) return false;
+
+      const fullPath = buf.toString("utf16le", 0, len * 2);
+      return fullPath.toLowerCase().includes("kiro.exe");
+    } finally {
+      CloseHandle(hProcess);
+    }
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Starts the background poller that watches for Kiro to become
  * the foreground window. When Kiro is detected in the foreground
  * AND the basket is not empty, all items are pasted into the chat input.
@@ -106,7 +160,7 @@ export function stopBasketPoller(): void {
  * Pastes all basket items into Kiro's chat input and clears the basket.
  * Assumes Kiro is already the foreground window.
  */
-function flushBasket(): void {
+export function flushBasket(): void {
   if (basket.length === 0) return;
 
   const combined = basket.join("\n\n");
@@ -118,7 +172,7 @@ function flushBasket(): void {
     writeFileSync(tempFile, combined, "utf-8");
     execSync(
       `powershell -NoProfile -Command "Get-Content -Raw '${tempFile.replace(/'/g, "''")}' | Set-Clipboard"`,
-      { timeout: 3000, stdio: "ignore" }
+      { timeout: 3000 }
     );
     unlinkSync(tempFile);
   } catch (err) {

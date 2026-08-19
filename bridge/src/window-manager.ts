@@ -1,48 +1,85 @@
-/**
+﻿/**
  * KiroCan Bridge - Window Manager
  *
- * Handles window enumeration, activation, and foreground management
- * using PowerShell commands. No native addons required — all OS
- * interaction via child_process exec.
+ * Handles Win32 window enumeration, activation, and foreground management
+ * using koffi for native FFI bindings.
  */
 
+import koffi from "koffi";
 import { execSync } from "node:child_process";
 import type { WindowHandle } from "./types.js";
 
 // ---------------------------------------------------------------------------
-// Constants
+// Win32 Constants
 // ---------------------------------------------------------------------------
 
-/** Default timeout (ms) for waiting on foreground activation. */
+const SW_RESTORE = 9;
 const DEFAULT_FOREGROUND_TIMEOUT_MS = 2000;
-
-/** Polling interval (ms) for foreground check loop. */
-const FOREGROUND_POLL_INTERVAL_MS = 100;
+const FOREGROUND_POLL_INTERVAL_MS = 50;
+const KIRO_PROCESS_NAME = "Kiro.exe";
+const PROCESS_QUERY_AND_READ = 0x0410;
 
 // ---------------------------------------------------------------------------
-// Helper Utilities
+// Win32 FFI Bindings
 // ---------------------------------------------------------------------------
 
-/**
- * Sleeps for the specified number of milliseconds.
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+const user32 = koffi.load("user32.dll");
+const kernel32 = koffi.load("kernel32.dll");
+const psapi = koffi.load("psapi.dll");
+
+const EnumWindowsProc = koffi.proto("EnumWindowsProc", "int", ["void *", "intptr"]);
+const EnumWindows = user32.func("EnumWindows", "int", [koffi.pointer(EnumWindowsProc), "intptr"]);
+const GetWindowThreadProcessId = user32.func("uint32_t __stdcall GetWindowThreadProcessId(void *hWnd, _Out_ uint32_t *lpdwProcessId)");
+const SetForegroundWindow = user32.func("SetForegroundWindow", "int", ["void *"]);
+const ShowWindow = user32.func("ShowWindow", "int", ["void *", "int"]);
+const GetForegroundWindow = user32.func("GetForegroundWindow", "void *", []);
+const IsIconic = user32.func("IsIconic", "int", ["void *"]);
+const IsWindow = user32.func("IsWindow", "int", ["void *"]);
+const IsWindowVisible = user32.func("IsWindowVisible", "int", ["void *"]);
+const OpenProcess = kernel32.func("OpenProcess", "void *", ["uint32", "int", "uint32"]);
+const CloseHandle = kernel32.func("CloseHandle", "int", ["void *"]);
+const GetModuleFileNameExW = psapi.func("uint32_t __stdcall GetModuleFileNameExW(void *hProcess, void *hModule, _Out_ uint16_t *lpFilename, uint32_t nSize)");
+const GetLastActivePopup = user32.func("GetLastActivePopup", "void *", ["void *"]);
+const GetWindowTextW = user32.func("int __stdcall GetWindowTextW(void *hWnd, _Out_ uint16_t *lpString, int nMaxCount)");
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function ptrToHandle(ptr: unknown): WindowHandle {
+  if (ptr === null || ptr === undefined) return 0;
+  if (typeof ptr === "number") return ptr;
+  if (typeof ptr === "bigint") return Number(ptr);
+  return 0;
 }
 
-/**
- * Runs a PowerShell command and returns trimmed stdout.
- * Returns null on any failure.
- */
-function psExec(command: string, timeoutMs: number = 5000): string | null {
+function handleToPtr(handle: WindowHandle): number {
+  return handle;
+}
+
+function getProcessName(pid: number): string | null {
+  const hProcess = OpenProcess(PROCESS_QUERY_AND_READ, 0, pid);
+  const hProcessHandle = ptrToHandle(hProcess);
+  if (hProcessHandle === 0) return null;
+
   try {
-    return execSync(
-      `powershell -NoProfile -Command "${command.replace(/"/g, '\\"')}"`,
-      { encoding: "utf8", timeout: timeoutMs, stdio: ["pipe", "pipe", "ignore"] }
-    ).trim();
-  } catch {
-    return null;
+    const MAX_PATH = 260;
+    const buf = Buffer.alloc(MAX_PATH * 2);
+    const len = GetModuleFileNameExW(hProcess, null, buf, MAX_PATH);
+    if (len === 0) return null;
+
+    const fullPath = buf.toString("utf16le", 0, len * 2);
+    const lastBackslash = fullPath.lastIndexOf("\\");
+    const lastSlash = fullPath.lastIndexOf("/");
+    const sep = Math.max(lastBackslash, lastSlash);
+    return sep >= 0 ? fullPath.substring(sep + 1) : fullPath;
+  } finally {
+    CloseHandle(hProcess);
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // ---------------------------------------------------------------------------
@@ -50,91 +87,108 @@ function psExec(command: string, timeoutMs: number = 5000): string | null {
 // ---------------------------------------------------------------------------
 
 /**
- * Finds the Kiro IDE window by querying the Kiro process for its main window handle.
- *
- * @returns The window handle of the Kiro IDE window, or null if not found.
+ * Finds the Kiro IDE window. Uses PowerShell Get-Process first (fast, reliable),
+ * falls back to koffi EnumWindows if needed.
  */
 export function findKiroWindow(): WindowHandle | null {
-  const result = psExec(
-    "(Get-Process Kiro -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1).MainWindowHandle"
-  );
-
-  if (result && result !== "0" && result !== "") {
-    const hwnd = parseInt(result, 10);
-    if (!isNaN(hwnd) && hwnd !== 0) {
-      return hwnd as WindowHandle;
-    }
-  }
-
-  return null;
-}
-
-/**
- * Activates a window by bringing it to the foreground using WScript.Shell.AppActivate.
- * If the window is minimized, restores it first via PowerShell.
- *
- * @param handle - The Win32 window handle to activate (used to find the process).
- * @returns true if the window was successfully activated.
- */
-export async function activateWindow(handle: WindowHandle): Promise<boolean> {
-  // Only restore if minimized (IsIconic), then activate via AppActivate
-  const script = `
-    $proc = Get-Process Kiro -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1;
-    if ($proc) {
-      $sig = '[DllImport(\"user32.dll\")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport(\"user32.dll\")] public static extern bool IsIconic(IntPtr hWnd);';
-      $type = Add-Type -MemberDefinition $sig -Name ShowWindowAPI -Namespace Win32 -PassThru -ErrorAction SilentlyContinue;
-      if ($type::IsIconic($proc.MainWindowHandle)) { $type::ShowWindow($proc.MainWindowHandle, 9) };
-      $wsh = New-Object -ComObject WScript.Shell;
-      $wsh.AppActivate($proc.Id);
-      Write-Output 'ok';
-    }
-  `.replace(/\n/g, " ");
-
-  const result = psExec(script, 5000);
-  if (result && result.includes("ok")) {
-    // Give window time to come to foreground
-    await sleep(150);
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * Checks whether the Kiro process owns the current foreground window.
- * Uses WScript.Shell AppActivate in test mode — returns true if Kiro would be activatable.
- * This avoids Add-Type C# compilation which crashes on repeated invocations.
- *
- * @returns true if Kiro is in the foreground.
- */
-export function isKiroForeground(): boolean {
+  // Primary: PowerShell (always works)
   try {
     const result = execSync(
-      'powershell -NoProfile -Command "$k=Get-Process Kiro -EA 0|?{$_.MainWindowHandle -ne 0}|Select -First 1;if($k){$w=New-Object -ComObject WScript.Shell;if($w.AppActivate($k.Id)){echo yes}}"',
-      { encoding: "utf8", timeout: 2000, stdio: ["pipe", "pipe", "ignore"] }
+      'powershell -NoProfile -Command "(Get-Process Kiro -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1).MainWindowHandle"',
+      { encoding: "utf8", timeout: 3000, stdio: ["pipe", "pipe", "ignore"] }
     ).trim();
-    return result === "yes";
+
+    if (result && result !== "0" && result !== "") {
+      const hwnd = parseInt(result, 10);
+      if (!isNaN(hwnd) && hwnd !== 0) {
+        return hwnd as WindowHandle;
+      }
+    }
   } catch {
-    return false;
+    // Fall through to EnumWindows
   }
+
+  // Fallback: koffi EnumWindows
+  const candidates: WindowHandle[] = [];
+
+  EnumWindows((hwnd: unknown, _lParam: unknown): number => {
+    const handle = ptrToHandle(hwnd);
+    if (handle === 0) return 1;
+    if (!IsWindowVisible(handleToPtr(handle))) return 1;
+
+    const pidOut: [number | null] = [null];
+    const tid = GetWindowThreadProcessId(hwnd, pidOut);
+    if (!tid) return 1;
+    const pid = pidOut[0];
+    if (pid === null || pid === 0) return 1;
+
+    const processName = getProcessName(pid);
+    if (processName !== null && processName.toLowerCase() === KIRO_PROCESS_NAME.toLowerCase()) {
+      candidates.push(handle);
+    } else {
+      // Title fallback
+      const MAX_TITLE = 256;
+      const titleBuf = Buffer.alloc(MAX_TITLE * 2);
+      const titleLen = GetWindowTextW(handleToPtr(handle), titleBuf, MAX_TITLE);
+      if (titleLen > 0) {
+        const title = titleBuf.toString("utf16le", 0, titleLen * 2);
+        if (title.includes("Kiro")) {
+          candidates.push(handle);
+        }
+      }
+    }
+
+    return 1;
+  }, 0);
+
+  if (candidates.length === 0) return null;
+
+  // Prefer non-minimized window
+  let best: WindowHandle = candidates[0];
+  for (const candidate of candidates) {
+    if (!IsIconic(handleToPtr(candidate))) {
+      best = candidate;
+      break;
+    }
+  }
+
+  return best;
 }
 
 /**
- * Checks whether the specified window is currently the foreground window.
- *
- * @param handle - The Win32 window handle to check.
- * @returns true if the window is in the foreground.
+ * Activates the Kiro window - restores if minimized, brings to foreground.
+ * Returns true even if SetForegroundWindow is blocked by Windows focus-stealing
+ * prevention — the caller should proceed anyway since Kiro may already be foreground.
+ */
+export async function activateWindow(handle: WindowHandle): Promise<boolean> {
+  if (!IsWindow(handleToPtr(handle))) return false;
+
+  if (IsIconic(handleToPtr(handle))) {
+    ShowWindow(handleToPtr(handle), SW_RESTORE);
+  }
+
+  SetForegroundWindow(handleToPtr(handle));
+
+  // Quick check - if already foreground, return immediately
+  if (isForeground(handle)) return true;
+
+  // Brief wait then return true anyway - Windows may block SetForegroundWindow
+  // from background processes, but Kiro is likely already foreground when
+  // the user presses a physical button
+  await sleep(100);
+  return true;
+}
+
+/**
+ * Checks whether the specified window is the foreground window.
  */
 export function isForeground(handle: WindowHandle): boolean {
-  return isKiroForeground();
+  const fg = ptrToHandle(GetForegroundWindow());
+  return fg === handle;
 }
 
 /**
- * Waits for Kiro to achieve foreground status by polling.
- *
- * @param handle - The Win32 window handle to wait on.
- * @param timeoutMs - Maximum time to wait in milliseconds (default: 2000ms).
- * @returns true if the window achieved foreground status within the timeout.
+ * Waits for the window to achieve foreground status.
  */
 export async function waitForForeground(
   handle: WindowHandle,
@@ -143,59 +197,32 @@ export async function waitForForeground(
   const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
-    if (isKiroForeground()) return true;
+    if (isForeground(handle)) return true;
+    SetForegroundWindow(handleToPtr(handle));
     await sleep(FOREGROUND_POLL_INTERVAL_MS);
   }
 
-  return isKiroForeground();
+  return isForeground(handle);
 }
 
-/**
- * Checks whether the Kiro window is minimized.
- *
- * @param handle - The Win32 window handle to check.
- * @returns true if the window is minimized.
- */
 export function isWindowMinimized(handle: WindowHandle): boolean {
-  const result = psExec(
-    "(Get-Process Kiro -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1).MainWindowHandle | ForEach-Object { Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class WC { [DllImport(\"user32.dll\")] public static extern bool IsIconic(IntPtr hWnd); }' -Language CSharp -ErrorAction SilentlyContinue; [WC]::IsIconic([IntPtr]$_) }"
-  );
-  return result === "True";
+  return IsIconic(handleToPtr(handle)) !== 0;
 }
 
-/**
- * Restores a minimized Kiro window.
- *
- * @param handle - The Win32 window handle to restore.
- */
 export function restoreWindow(handle: WindowHandle): void {
-  psExec(
-    `$proc = Get-Process Kiro -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1; if ($proc) { $sig = '[DllImport(\"user32.dll\")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);'; $type = Add-Type -MemberDefinition $sig -Name SW -Namespace Win32Restore -PassThru; $type::ShowWindow($proc.MainWindowHandle, 9) }`
-  );
+  if (IsIconic(handleToPtr(handle))) {
+    ShowWindow(handleToPtr(handle), SW_RESTORE);
+  }
 }
 
-/**
- * Checks whether the specified window handle is still valid.
- *
- * @param handle - The Win32 window handle to validate.
- * @returns true if the window handle is valid (Kiro process exists with a window).
- */
 export function isValidWindow(handle: WindowHandle): boolean {
-  const result = psExec(
-    "(Get-Process Kiro -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Measure-Object).Count"
-  );
-  return result !== null && parseInt(result, 10) > 0;
+  return IsWindow(handleToPtr(handle)) !== 0;
 }
 
-/**
- * Retrieves the title bar text of the Kiro window.
- *
- * @param handle - The Win32 window handle.
- * @returns The window title string, or empty string if not available.
- */
 export function getWindowTitle(handle: WindowHandle): string {
-  const result = psExec(
-    "(Get-Process Kiro -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1).MainWindowTitle"
-  );
-  return result ?? "";
+  const MAX_TITLE = 256;
+  const buf = Buffer.alloc(MAX_TITLE * 2);
+  const len = GetWindowTextW(handleToPtr(handle), buf, MAX_TITLE);
+  if (len === 0) return "";
+  return buf.toString("utf16le", 0, len * 2);
 }

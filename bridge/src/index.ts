@@ -28,8 +28,9 @@ async function main(): Promise<void> {
   // Start health monitoring (polls session files every 5s)
   healthMonitor.start();
 
-  // Start clipboard basket poller (watches for Kiro foreground to auto-paste)
-  startBasketPoller();
+  // Clipboard basket poller disabled in embedded mode to prevent crashes.
+  // Paste To Kiro works via Default Profile multi-action (Ctrl+C + ask-kiro.bat).
+  // startBasketPoller();
 
   // Create and start the HTTP server
   const app = createHttpServer(stateMachine, healthMonitor);

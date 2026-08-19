@@ -2,7 +2,7 @@ type: plugin4
 name: KiroCan
 displayName: KiroCan
 description: Control Kiro IDE from your MX Creative Console - cancel, ask, navigate sessions, and more.
-pluginFileName: KiroMxConsolePlugin.dll
+pluginFileName: KiroCanPlugin.dll
 version: 1.0
 author: memetcircus
 copyright: Copyright 2026 memetcircus. All rights reserved.

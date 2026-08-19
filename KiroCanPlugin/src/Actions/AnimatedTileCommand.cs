@@ -1,4 +1,4 @@
-namespace Loupedeck.KiroMxConsolePlugin
+namespace Loupedeck.KiroCanPlugin
 {
     using System;
     using System.Collections.Generic;
@@ -94,7 +94,7 @@ namespace Loupedeck.KiroMxConsolePlugin
             SubscribeToMonitor();
 
             // If monitor wasn't ready, subscribe to the ready event
-            var plugin2 = (KiroMxConsolePlugin)this.Plugin;
+            var plugin2 = (KiroCanPlugin)this.Plugin;
             plugin2.HealthMonitorReady -= OnMonitorReady; // prevent double
             plugin2.HealthMonitorReady += OnMonitorReady;
 
@@ -108,7 +108,7 @@ namespace Loupedeck.KiroMxConsolePlugin
 
         private void SubscribeToMonitor()
         {
-            var plugin = (KiroMxConsolePlugin)this.Plugin;
+            var plugin = (KiroCanPlugin)this.Plugin;
             if (plugin.HealthMonitor != null)
             {
                 plugin.HealthMonitor.StateChanged -= OnStateChanged; // prevent double-subscribe
@@ -129,7 +129,7 @@ namespace Loupedeck.KiroMxConsolePlugin
 
         protected override Boolean OnUnload()
         {
-            var plugin = (KiroMxConsolePlugin)this.Plugin;
+            var plugin = (KiroCanPlugin)this.Plugin;
             if (plugin.HealthMonitor != null)
             {
                 plugin.HealthMonitor.StateChanged -= OnStateChanged;
@@ -151,7 +151,7 @@ namespace Loupedeck.KiroMxConsolePlugin
 
         private void OnStateChanged(Object sender, EventArgs e)
         {
-            var plugin = (KiroMxConsolePlugin)this.Plugin;
+            var plugin = (KiroCanPlugin)this.Plugin;
             var monitor = plugin.HealthMonitor;
             if (monitor == null) return;
 

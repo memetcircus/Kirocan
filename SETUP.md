@@ -1,142 +1,124 @@
 # KiroCan Setup Guide (Windows)
 
-Step-by-step guide for getting KiroCan running on your Windows machine with a Logitech MX Creative Console.
-
 ## Prerequisites
 
-- **Windows 10 or 11** (x64 or ARM64)
+- **Windows 10 or 11** (x64)
 - **Logitech MX Creative Console** connected via USB or Bluetooth
-- **Logi Options+** installed and running ([download](https://www.logitech.com/software/logi-options-plus.html))
+- **Logi Options+** installed ([download](https://www.logitech.com/software/logi-options-plus.html))
 - **Kiro IDE** installed ([download](https://kiro.dev))
-
-For building from source, you also need:
+- **Node.js 22+** ([download](https://nodejs.org/))
 - **.NET 10 SDK** ([download](https://dotnet.microsoft.com/download/dotnet/10.0))
-- **Bun** ([install](https://bun.sh)) — compiles bridge to standalone exe
 
 ## Installation
 
-### Option A: Install .lplug4 package (recommended)
+### Step 1: Clone and build
 
-1. Download `KiroCan.lplug4` from [Releases](https://github.com/memetcircus/Kirocan/releases)
-2. Double-click the file — Logi Options+ installs it automatically
-3. Done. The bridge extracts and starts automatically when the plugin loads.
-
-No terminal, no Node.js, no manual bridge startup required.
-
-### Option B: Build from source
-
-```powershell
+```bash
 git clone https://github.com/memetcircus/Kirocan.git
 cd Kirocan
-.\scripts\build-release.ps1
+
+# Build plugin
+cd KiroCanPlugin/src
+dotnet build -c Release
+
+# Install bridge dependencies
+cd ../../bridge
+npm install
 ```
 
-This compiles the bridge into a standalone exe, builds the plugin, and registers it with Logi Plugin Service via a `.link` file.
+### Step 2: Start the bridge
 
-## Configure Buttons in Logi Options+
+Open a **separate terminal** (not Kiro's integrated terminal) and run:
 
-### Step 1: Create a Kiro Profile
+```bash
+cd bridge
+node dist/index.js
+```
+
+You should see: `KiroCan Bridge listening on http://127.0.0.1:9848`
+
+Keep this terminal open while using KiroCan.
+
+### Step 3: Assign buttons in Logi Options+
 
 1. Open **Logi Options+**
 2. Select your **MX Creative Console**
-3. Click **+ Add Application** and browse to `Kiro.exe`
-4. This profile activates automatically when Kiro is the foreground window
+3. Create a **Kiro** application profile (or select existing)
+4. Drag KiroCan actions from the right panel onto LCD buttons
 
-### Step 2: Assign KiroCan Actions
+Available action groups:
+- **Kiro Commands**: Screenshot, Stop, Go!
+- **Snippets**: Be Honest, Don't Code Yet, Show Options, Explain Why, Keep Short, No Tests
+- **Prompts**: Criticize, Refactor, Write Tests, Explain, Fix Bug, Optimize, Review, Document, Simplify
+- **Utilities**: New Session, Struct Prompt, Ask Kiro, Terminal to Chat, Screen Record, Paste To Kiro, Workspace, Start Spec, Git Commit
 
-With the Kiro profile selected:
+## Kiro Hooks Configuration
 
-1. Click on an LCD button to assign an action
-2. In the action picker, look for **KiroCan** section
-3. Drag actions onto your preferred button positions
-
-**Available actions:**
-
-| Category | Actions |
-|----------|---------|
-| Snippets | Be Honest, Don't Code Yet, Show Options, Explain Why, Keep Short, No Tests |
-| Controls | Screenshot, Stop, Go! |
-| Utilities | New Session, Struct Prompt, Inline Chat, Terminal→Chat, Screen Record, Paste To Kiro, Workspace, Start Spec, Git Commit |
-| Prompts | Criticize, Refactor, Write Tests, Explain, Fix Bug, Optimize, Review, Document, Simplify |
-
-## Configure Kiro Hooks
-
-KiroCan needs hooks in your Kiro workspace to detect when the AI agent starts/stops working. These hooks tell the bridge to update its state, which triggers the ghost animation.
+KiroCan needs hooks in your Kiro workspace to detect when the AI agent starts/stops working. These hooks trigger the ghost animation.
 
 The hooks are included in this repo's `.kiro/hooks/` directory. If you're working in this repo, they work automatically.
 
-**For other projects**, copy these hook files to the project's `.kiro/hooks/` folder:
-
-- `.kiro/hooks/kirocan-working.json` — Signals bridge when agent starts working
-- `.kiro/hooks/kirocan-idle.json` — Signals bridge when agent stops
+**For other projects**, copy these hook files to that project's `.kiro/hooks/` folder:
+- `.kiro/hooks/kirocan-working.json`
+- `.kiro/hooks/kirocan-idle.json`
 
 ## Paste To Kiro Setup (Optional)
 
-This feature lets you select text in any app, press a button, and it queues up. When you switch to Kiro, everything auto-pastes into chat.
+This lets you select text in any app, press a button, and it queues up. When you press "Paste To Kiro" in Kiro profile, everything pastes into chat.
 
-### Setup in Logi Options+ Default Profile:
+### Default Profile multi-action:
 
-1. Go to the **Default Profile** (top bar, first icon — works from any app)
-2. Click an empty button → **System Actions** → **ADVANCED** → **Multi-action**
-3. Add two actions in order:
-   - **Action 1**: Keyboard Shortcut → `Ctrl+C`
-   - **Action 2**: Run → browse to `paste-to-kiro.bat`:
-     - If installed via .lplug4: `%LOCALAPPDATA%\Logi\LogiPluginService\Plugins\KiroCan\bin\paste-to-kiro.bat`
-     - If built from source: `bridge\paste-to-kiro.bat` (in the repo folder)
+1. Go to **Default Profile** in Logi Options+ (works from any app)
+2. Click an empty button -> System Actions -> ADVANCED -> Multi-action
+3. Add two actions:
+   - **Action 1**: Keyboard Shortcut: `Ctrl+C`
+   - **Action 2**: Run: browse to `bridge\paste-to-kiro.bat` (in the repo folder)
 4. Save
 
-**Usage:** Select text in any app → press button → switch to Kiro → text auto-pastes into chat.
+**Usage:** Select text in any app -> press button -> switch to Kiro -> press "Paste To Kiro" button -> all queued text pastes into chat.
 
 ## Verify Everything Works
 
-1. Open Kiro IDE with a project that has the KiroCan hooks
-2. Press a button on the MX Console (try "Go!" or a snippet like "Be Honest")
-3. The ghost animation should play while Kiro is working
-4. When Kiro finishes, animation stops and button labels return
+1. Bridge running in separate terminal ("listening on 127.0.0.1:9848")
+2. Kiro IDE open with a project
+3. Kiro is the foreground window
+4. Press a snippet button (e.g., "Be Honest") -> text appears in chat input
+5. Ghost animation plays while Kiro is working
 
 ## Troubleshooting
 
-### Plugin not showing in Logi Options+
-- Close Logi Options+ completely (system tray → right-click → Quit)
-- Reopen Logi Options+
-- If built from source, check that `%LOCALAPPDATA%\Logi\LogiPluginService\Plugins\` contains a `KiroCanPlugin.link` file
-
 ### Buttons do nothing
-- Check Kiro is open and the correct application profile is active in Logi Options+
-- Check bridge is running: open `http://localhost:9848/health` in a browser — should return JSON
-- If bridge isn't running, restart Logi Options+ (plugin extracts and starts it on load)
-- Check `%LOCALAPPDATA%\KiroCan\kirocan-bridge.exe` exists (plugin extracts it there)
+- Is bridge running? Check terminal shows "listening on 127.0.0.1:9848"
+- Is Kiro the foreground window? Buttons type into the active window.
+- Try: `curl http://localhost:9848/health` in another terminal - should return JSON.
 
-### Ghost animation stuck / purple tiles remain
-- Press the **Stop** button to force-clear animation
-- If persists, switch pages (arrow buttons on console) and switch back
-
-### Bridge port 9848 in use
-If another process is using port 9848:
-```powershell
-# Find what's using the port
-netstat -ano | findstr :9848
-# Kill the process
-Stop-Process -Id <PID> -Force
+### Bridge won't start / port in use
+```bash
+# Kill existing bridge process
+taskkill /F /IM node.exe
+# Restart
+node dist/index.js
 ```
-Then restart Logi Options+ to let the plugin respawn the bridge.
 
-### Build errors (from source)
-```powershell
-# Clean rebuild
-cd KiroCanPlugin\src
-dotnet clean
-dotnet build -c Release
-```
+### Plugin not showing in Logi Options+
+- Restart Logi Options+ (system tray -> right-click -> Quit, then reopen)
+- Rebuild: `cd KiroCanPlugin/src && dotnet build -c Release`
+- Check `.link` file exists: `%LOCALAPPDATA%\Logi\LogiPluginService\Plugins\KiroCanPlugin.link`
+
+### Ghost animation not working
+- Check Kiro hooks are in `.kiro/hooks/` of your current project
+- Bridge must be running for animation to trigger
+
+### Bridge started from Kiro terminal dies when switching windows
+- Use a **separate** PowerShell/Terminal window, not Kiro's integrated terminal
+- Kiro's terminal may kill background processes on focus change
 
 ## Updating
 
-### If using .lplug4
-Download the new version and double-click to install. It replaces the old version.
-
-### If built from source
-```powershell
+```bash
 git pull
-.\scripts\build-release.ps1
+cd bridge && npm install && npx tsc
+cd ../KiroCanPlugin/src && dotnet build -c Release
 ```
-Then restart Logi Options+.
+
+Restart bridge and Logi Options+.

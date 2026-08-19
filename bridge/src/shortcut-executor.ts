@@ -8,6 +8,7 @@
  */
 
 import { execSync } from "node:child_process";
+import koffi from "koffi";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -19,38 +20,28 @@ import type { ActionResult } from "./types.js";
 import { VK } from "./types.js";
 
 // ---------------------------------------------------------------------------
-// Clipboard Helpers (PowerShell-based, no native addons)
+// Win32 Clipboard Bindings
 // ---------------------------------------------------------------------------
 
-/**
- * Gets a hash/identifier of the current clipboard content to detect changes.
- * Uses PowerShell to check if clipboard contains an image.
- */
-function clipboardHasImage(): boolean {
-  try {
-    const result = execSync(
-      'powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms; if ([System.Windows.Forms.Clipboard]::ContainsImage()) { Write-Output yes } else { Write-Output no }"',
-      { encoding: "utf8", timeout: 3000 }
-    ).trim();
-    return result === "yes";
-  } catch {
-    return false;
-  }
-}
+const user32Clip = koffi.load("user32.dll");
 
-/**
- * Gets the current clipboard text content (used to detect clipboard changes).
- */
-function getClipboardText(): string {
-  try {
-    return execSync(
-      'powershell -NoProfile -Command "Get-Clipboard"',
-      { encoding: "utf8", timeout: 3000 }
-    ).trim();
-  } catch {
-    return "";
-  }
-}
+/** Returns the clipboard sequence number; changes whenever clipboard content changes. */
+const GetClipboardSequenceNumber = user32Clip.func(
+  "GetClipboardSequenceNumber",
+  "uint32",
+  []
+);
+
+/** Checks whether the clipboard contains data in the specified format. */
+const IsClipboardFormatAvailable = user32Clip.func(
+  "IsClipboardFormatAvailable",
+  "int",
+  ["uint32"]
+);
+
+// Clipboard format constants
+const CF_BITMAP = 2;
+const CF_DIB = 8;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -128,12 +119,10 @@ export async function executePrompt(text: string): Promise<ActionResult> {
  * @returns ActionResult indicating success or failure.
  */
 export async function executeSnippet(text: string): Promise<ActionResult> {
-  const result = await activateKiro();
-  if (!result.success) return result;
+  // Try to activate Kiro but continue even if it fails
+  // (Kiro may already be foreground when button is pressed from console)
+  await activateKiro();
 
-  // Focus chat input first (Ctrl+L), then type
-  sendKeyCombo([VK.VK_CONTROL, VK.VK_L]);
-  await sleep(150);
   typeText(text);
   return { success: true };
 }
@@ -204,12 +193,10 @@ export async function executeNewSession(): Promise<ActionResult> {
  * @returns ActionResult indicating success or failure.
  */
 export async function executeSaveAll(): Promise<ActionResult> {
-  const result = await activateKiro();
-  if (!result.success) return result;
+  await activateKiro();
 
-  sendKeyCombo([VK.VK_CONTROL, VK.VK_K]);
-  await sleep(100);
-  sendKey(VK.VK_S);
+  // Ctrl+Shift+S = Save All in VS Code / Kiro
+  sendKeyCombo([VK.VK_CONTROL, VK.VK_SHIFT, VK.VK_S]);
   return { success: true };
 }
 
@@ -456,15 +443,8 @@ export async function executeStructPrompt(): Promise<ActionResult> {
  * @returns ActionResult indicating success or failure.
  */
 export async function executeScreenshot(): Promise<ActionResult> {
-  // 1. Clear clipboard first so we can detect when snipping tool writes to it
-  try {
-    execSync(
-      'powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::Clear()"',
-      { timeout: 3000, stdio: "ignore" }
-    );
-  } catch {
-    // Non-fatal, continue
-  }
+  // 1. Record the current clipboard sequence number
+  const initialSeqNum = GetClipboardSequenceNumber();
 
   // 2. Launch Snipping Tool
   try {
@@ -473,11 +453,11 @@ export async function executeScreenshot(): Promise<ActionResult> {
       { timeout: 3000, stdio: "ignore" }
     );
   } catch {
-    return { success: false, error: "Failed to launch Snipping Tool" };
+    sendKeyCombo([VK.VK_LWIN, VK.VK_SHIFT, VK.VK_S]);
   }
 
-  // 3. Poll clipboard for an image (up to 30 seconds, every 500ms)
-  const POLL_INTERVAL_MS = 500;
+  // 3. Poll clipboard for a new image (up to 30 seconds, every 250ms)
+  const POLL_INTERVAL_MS = 250;
   const TIMEOUT_MS = 30_000;
   const maxAttempts = TIMEOUT_MS / POLL_INTERVAL_MS;
 
@@ -486,9 +466,15 @@ export async function executeScreenshot(): Promise<ActionResult> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     await sleep(POLL_INTERVAL_MS);
 
-    if (clipboardHasImage()) {
-      imageDetected = true;
-      break;
+    const currentSeqNum = GetClipboardSequenceNumber();
+    if (currentSeqNum !== initialSeqNum) {
+      const hasBitmap = IsClipboardFormatAvailable(CF_BITMAP) !== 0;
+      const hasDib = IsClipboardFormatAvailable(CF_DIB) !== 0;
+
+      if (hasBitmap || hasDib) {
+        imageDetected = true;
+        break;
+      }
     }
   }
 

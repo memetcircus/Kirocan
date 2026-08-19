@@ -19,6 +19,7 @@ import express from "express";
 import type { StateMachine } from "./state-machine.js";
 import type { HealthMonitor } from "./health-monitor.js";
 import type { HealthResponse, SuccessResponse, ErrorResponse } from "./types.js";
+import { flushBasket } from "./clipboard-basket.js";
 
 import {
   executeCancel,
@@ -439,6 +440,16 @@ export function createHttpServer(
       res.status(503).json(errorResponse);
       return;
     }
+    const successResponse: SuccessResponse = { success: true };
+    res.json(successResponse);
+  });
+
+  /**
+   * POST /flush-basket
+   * Immediately pastes all queued basket items into Kiro chat.
+   */
+  app.post("/flush-basket", (_req, res) => {
+    flushBasket();
     const successResponse: SuccessResponse = { success: true };
     res.json(successResponse);
   });
