@@ -8,15 +8,44 @@
 KiroCan is a physical AI coding companion that connects the Logitech MX Creative Console hardware to Kiro IDE on Windows. Press LCD buttons to send prompts, see animated ghost feedback while Kiro processes requests, and capture screenshots directly into chat.
 
 ## Architecture
-```
-MX Creative Console -> C# Plugin (Logi Actions SDK, .NET 10)
-                          | HTTP on localhost:9848
-                       Bridge (Node.js + koffi Win32 FFI)
-                          | Win32 SendInput / Window management
-                       Kiro IDE
+
+```mermaid
+graph TD
+    subgraph Plugin ["C# Plugin (.NET 10)"]
+        Anim[Animation Engine]
+        Actions[Button Actions]
+    end
+
+    MX["🎛️ MX Creative Console"]
+
+    subgraph Bridge ["Bridge (localhost:9848)"]
+        HTTP[HTTP Server]
+        Health[Health Monitor]
+        State[State Machine]
+        KeySim[Keyboard Simulator]
+    end
+
+    subgraph IDE ["Kiro IDE"]
+        Hooks[Kiro Hooks]
+        KiroWin[Kiro Window]
+    end
+
+    Anim -->|"LCD Bitmaps"| MX
+    MX -->|"Button Press"| Actions
+    Actions -->|"HTTP POST"| HTTP
+    Actions -->|"Poll /health"| Health
+    Hooks -->|"POST /hook/working"| State
+    HTTP --> KeySim
+    KeySim -->|"Win32 SendInput"| KiroWin
 ```
 
-The bridge runs as a local Node.js process that translates button presses into Win32 keyboard simulation targeting Kiro IDE. The plugin communicates with the bridge over HTTP on localhost.
+The bridge is compiled into a standalone executable and embedded as a resource inside the plugin DLL. On first load, the plugin extracts it to `%LOCALAPPDATA%\KiroCan\kirocan-bridge.exe` and spawns it automatically. No terminal, no Node.js, no npm required for end users.
+
+### Data Flow
+
+1. **Command flow** (user → IDE): Button press → Plugin → HTTP → Bridge → Win32 keystrokes → Kiro
+2. **State flow** (IDE → hardware): Kiro Hook → Bridge state machine → Plugin polls `/health` → Animation updates on LCD
+3. **Health flow**: Bridge reads session files → calculates context % → Plugin adjusts ghost sprite variant
 
 ## Features
 - **Ghost Animation** - 30-frame animated Kiro ghost across 9 LCD buttons while Kiro is working
