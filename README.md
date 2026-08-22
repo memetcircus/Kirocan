@@ -76,7 +76,16 @@ The bridge is compiled into a standalone executable and embedded as a resource i
 
 No Node.js or .NET SDK needed — everything is bundled in the plugin.
 
-### Install from source (recommended)
+### Install from .lplug4 (recommended)
+
+1. Download `KiroCan_for_Windows_1_0.lplug4` from [Releases](https://github.com/memetcircus/Kirocan/releases)
+2. Double-click to install
+3. Open Logi Options+ and assign KiroCan buttons to your MX Creative Console
+4. Done — bridge starts automatically when plugin loads
+
+No Node.js or .NET SDK needed — everything is bundled in the plugin.
+
+### Install from source (for development)
 
 ```bash
 git clone https://github.com/memetcircus/Kirocan.git
@@ -93,19 +102,9 @@ npm install
 # Start bridge (keep this terminal open)
 node dist/index.js
 ```
-
 Then open Logi Options+ and assign KiroCan buttons to your MX Creative Console.
 
-### Install from .lplug4 (recommended)
-
-1. Download `KiroCan_for_Windows_1_0.lplug4` from [Releases](https://github.com/memetcircus/Kirocan/releases)
-2. Double-click to install
-3. Open Logi Options+ and assign KiroCan buttons to your MX Creative Console
-4. Done — bridge starts automatically when plugin loads
-
-No Node.js or .NET SDK needed — everything is bundled in the plugin.
-
-### Install from source (for development)
+### Setup Instructions
 
 See [SETUP.md](./SETUP.md) for detailed instructions including:
 - Logi Options+ button assignment
