@@ -25,3 +25,6 @@ image.png
 
 # Temp scripts (not part of the project)
 create-lplug4.ps1
+
+# Local reference files
+rules.txt
