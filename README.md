@@ -96,14 +96,16 @@ node dist/index.js
 
 Then open Logi Options+ and assign KiroCan buttons to your MX Creative Console.
 
-### Install from .lplug4 (if available)
+### Install from .lplug4 (recommended)
 
-1. Download `KiroCan.lplug4` from [Releases](https://github.com/memetcircus/Kirocan/releases)
+1. Download `KiroCan_for_Windows_1_0.lplug4` from [Releases](https://github.com/memetcircus/Kirocan/releases)
 2. Double-click to install
 3. Open Logi Options+ and assign KiroCan buttons to your MX Creative Console
 4. Done — bridge starts automatically when plugin loads
 
-## Setup Instructions
+No Node.js or .NET SDK needed — everything is bundled in the plugin.
+
+### Install from source (for development)
 
 See [SETUP.md](./SETUP.md) for detailed instructions including:
 - Logi Options+ button assignment
