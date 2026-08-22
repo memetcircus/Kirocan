@@ -39,7 +39,7 @@ graph TD
     KeySim -->|"Win32 SendInput"| KiroWin
 ```
 
-The bridge is compiled into a standalone executable and embedded as a resource inside the plugin DLL. On first load, the plugin extracts it to `%LOCALAPPDATA%\KiroCan\kirocan-bridge.exe` and spawns it automatically. No terminal, no Node.js, no npm required for end users.
+The bridge runs as a bundled Node.js process inside the plugin package. When the plugin loads, it automatically starts the bridge — no terminal or manual setup needed.
 
 ### Data Flow
 
@@ -73,8 +73,6 @@ The bridge is compiled into a standalone executable and embedded as a resource i
 - Logitech MX Creative Console
 - Logi Options+
 - Kiro IDE
-
-No Node.js or .NET SDK needed — everything is bundled in the plugin.
 
 ### Install from .lplug4 (recommended)
 
@@ -195,12 +193,6 @@ Build creates a `.link` file so Logi Plugin Service loads from build output.
 ```bash
 cd bridge
 npm test
-```
-
-### Plugin Tests
-```bash
-cd plugin/tests
-dotnet test
 ```
 
 ## How Kiro Was Used
