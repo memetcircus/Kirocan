@@ -1,7 +1,0 @@
-type: plugin4
-name: KiroCan
-displayName: KiroCan
-description: Kiro IDE integration for MX Creative Console
-version: 1.0
-pluginFileName: KiroCanPlugin.dll
-pluginFolderWin: .
