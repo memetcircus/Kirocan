@@ -255,8 +255,6 @@ KiroCan/
 | Library | Purpose | License |
 |---------|---------|---------|
 | PluginApi.dll | Logi Actions SDK | Logitech proprietary |
-| xUnit | Test framework | Apache-2.0 |
-| FsCheck.Xunit | Property-based testing | BSD-3-Clause |
 
 ## API Costs & Rate Limits
 - **No API costs** - all communication is local (HTTP on localhost:9848)
