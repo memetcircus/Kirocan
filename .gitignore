@@ -6,13 +6,22 @@ plugin/obj/
 KiroCanPlugin/bin/
 KiroCanPlugin/obj/
 
+# Root node_modules (sprite generation tools)
+node_modules/
+
 # Package artifacts
 plugin/KiroCan.lplug4
 bridge/package-lock.json
+*.lplug4
 
 # IDE
 .vs/
 *.user
+
+# Temp/generated
+debug.log
+image.png
+*.bun-build
 
 # Temp scripts (not part of the project)
 create-lplug4.ps1
