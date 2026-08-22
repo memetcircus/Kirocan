@@ -1,6 +1,21 @@
 # KiroCan Setup Guide (Windows)
 
-## Prerequisites
+## Option A: Install from .lplug4 (recommended)
+
+**Prerequisites:** Windows 10/11, Logitech MX Creative Console, Logi Options+, Kiro IDE
+
+1. Download `KiroCan.lplug4` from [Releases](https://github.com/memetcircus/Kirocan/releases)
+2. Double-click to install
+3. Open Logi Options+ → select MX Creative Console → assign KiroCan buttons
+4. Done — bridge starts automatically when plugin loads
+
+No Node.js, no .NET SDK, no terminal needed.
+
+---
+
+## Option B: Build from source
+
+### Prerequisites
 
 - **Windows 10 or 11** (x64)
 - **Logitech MX Creative Console** connected via USB or Bluetooth

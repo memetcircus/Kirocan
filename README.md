@@ -60,13 +60,21 @@ The bridge is compiled into a standalone executable and embedded as a resource i
 
 ## Quick Start
 
-### Prerequisites
+### Prerequisites (source build)
 - Windows 10/11
 - [Logitech MX Creative Console](https://www.logitech.com/products/keyboards/mx-creative-console.html)
 - [Logi Options+](https://www.logitech.com/software/logi-options-plus.html) installed
 - [Kiro IDE](https://kiro.dev)
 - [Node.js 22+](https://nodejs.org/) (LTS)
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+
+### Prerequisites (.lplug4 install)
+- Windows 10/11
+- Logitech MX Creative Console
+- Logi Options+
+- Kiro IDE
+
+No Node.js or .NET SDK needed — everything is bundled in the plugin.
 
 ### Install from source (recommended)
 
@@ -92,8 +100,8 @@ Then open Logi Options+ and assign KiroCan buttons to your MX Creative Console.
 
 1. Download `KiroCan.lplug4` from [Releases](https://github.com/memetcircus/Kirocan/releases)
 2. Double-click to install
-3. Start the bridge: `cd bridge && node dist/index.js`
-4. Assign buttons in Logi Options+
+3. Open Logi Options+ and assign KiroCan buttons to your MX Creative Console
+4. Done — bridge starts automatically when plugin loads
 
 ## Setup Instructions
 
