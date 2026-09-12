@@ -1,7 +1,7 @@
 # Kirocan for Mac — Physical AI Coding Companion
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/memetcircus/mxkiro-mac/main/assets/demo.gif" alt="Ghost Animation on MX Creative Console" width="480">
+  <img src="assets/demo.gif" alt="Ghost Animation on MX Creative Console" width="480">
 </p>
 
 A physical AI coding companion that connects **Logitech MX Creative Console** to **Kiro IDE** on macOS. Press LCD buttons to send prompts, navigate sessions with the dial, see Kiro's status via ghost animations, and capture screenshots directly into chat. (pronounced "kee-ro-jan")
@@ -59,7 +59,7 @@ Download `Kirocan-for-Mac.lplug4` from the [Logi Marketplace](https://marketplac
 On first button press, macOS asks for permissions for `node`. **Click "Allow"** — this enables keyboard simulation and screenshot capture.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/memetcircus/mxkiro-mac/main/assets/node_permission.png" alt="Allow node to control System Events" width="400">
+  <img src="assets/node_permission.png" alt="Allow node to control System Events" width="400">
 </p>
 
 **Step 3 — Assign buttons**
@@ -141,7 +141,7 @@ The iPhone Record button lets you capture video from your iPhone and have frames
 **Quick install:** [Download "Kiro Record" Shortcut](https://www.icloud.com/shortcuts/77cf9e0d6118431d99fcb7f955b2cc55) → Open on iPhone → Change `Akifs-Mac-mini.local` to your Mac's hostname.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/memetcircus/mxkiro-mac/main/assets/Kiro_Record_Shortcut.png" alt="Kiro Record Shortcut configuration" width="300">
+  <img src="assets/Kiro_Record_Shortcut.png" alt="Kiro Record Shortcut configuration" width="300">
 </p>
 
 **Manual Shortcut setup:**
