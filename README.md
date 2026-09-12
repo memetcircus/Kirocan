@@ -245,6 +245,7 @@ KiroCan/
 +-- README.md
 +-- SETUP.md
 +-- LICENSE
++-- NOTICE
 ```
 
 ## Third-Party Libraries
@@ -270,4 +271,4 @@ KiroCan/
 - **No external services** - fully offline, no internet required
 
 ## License
-MIT License. See [LICENSE](./LICENSE) for details.
+Apache License 2.0. See [LICENSE](./LICENSE) and [NOTICE](./NOTICE) for details.
