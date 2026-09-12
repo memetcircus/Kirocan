@@ -1,0 +1,172 @@
+# Kirocan for Mac — Physical AI Coding Companion
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/memetcircus/mxkiro-mac/main/assets/demo.gif" alt="Ghost Animation on MX Creative Console" width="480">
+</p>
+
+A physical AI coding companion that connects **Logitech MX Creative Console** to **Kiro IDE** on macOS. Press LCD buttons to send prompts, navigate sessions with the dial, see Kiro's status via ghost animations, and capture screenshots directly into chat. (pronounced "kee-ro-jan")
+
+> Looking for the Windows version? See [memetcircus/Kirocan](https://github.com/memetcircus/Kirocan).
+
+![Architecture](https://img.shields.io/badge/Architecture-C%23_%2B_Node.js_%2B_AppleScript-purple)
+![Platform](https://img.shields.io/badge/Platform-macOS-blue)
+![Status](https://img.shields.io/badge/Status-Working_on_Hardware-green)
+
+## What It Does
+
+| Feature | Description |
+|---------|-------------|
+| 🎨 **Ghost Animation** | 9-tile animated Kiro ghost walks across LCD while Kiro is working |
+| 🔥 **Context Health** | Ghost changes appearance based on real context window usage (normal → worried → fire) |
+| 📸 **Screenshot → Chat** | One button: crosshair → select area → auto-compress JPEG → paste into Kiro chat |
+| 🎬 **Screen Record → Chat** | Quick mode (5 frames) or Long mode (10 frames) — select area, capture sequence, auto-paste into chat for visual analysis |
+| 📱 **iPhone Record** | Record video with iPhone → frames extracted (ffmpeg, 1fps, max 8) → auto-paste into Kiro chat. Capture physical screens, whiteboards, devices |
+| ❓ **Ask Kiro** | Select text in any app, press button — Kiro answers about the selected content |
+| ⏹️ **Stop/Cancel** | Physical button to cancel Kiro's active generation |
+| 🔄 **Session Navigate** | Dial rotation to switch between Kiro chat sessions |
+| 🆕 **New Session** | Button to open a fresh Kiro chat tab |
+| ✏️ **Inline Chat** | Button to open inline AI editing at cursor position |
+| ⌨️ **Terminal → Chat** | Button to send terminal errors to Kiro for analysis |
+| 📝 **Prompt Buttons** | 9 quick prompts that work on the active file: Explain, Criticize, Document, Fix Bug, Optimize, Refactor, Review, Simplify, Write Tests. Press any button and Kiro analyzes the currently open file. |
+| 📐 **Struct Prompt** | Rewrites your messy prompt into a clear, structured one |
+| 📋 **Start Spec** | Begin a spec workflow — creates requirements, design, tasks before execution |
+| 📦 **Git Commit** | Generate a commit message from current changes and commit |
+| 🔍 **Understand Workspace** | Ask Kiro to analyze and summarize the project structure |
+
+## Architecture
+
+```
+MX Creative Console → C# Plugin (Logi SDK) → HTTP → Bridge Service (Node.js) → Kiro IDE (AppleScript)
+```
+
+- **C# Plugin** — Runs inside Logi Plugin Service, renders LCD animations, sends HTTP requests
+- **Bridge Service** — Node.js orchestrator on `localhost:9848`, routes commands to Kiro IDE
+- **Kiro Hooks** — IDE events (`promptSubmit`, `agentStop`) notify Bridge of state changes
+- **AppleScript** — Keyboard simulation for Kiro IDE interaction (Cmd+L, Ctrl+C, Cmd+Shift+4, etc.)
+
+## Installation
+
+### Install from .lplug4 (recommended)
+
+The easiest way — no terminal, no Node.js, no .NET SDK. Everything (including the Bridge service) is bundled in the plugin.
+
+**Step 1 — Install the plugin**
+
+Download `Kirocan-for-Mac.lplug4` from the [Logi Marketplace](https://marketplace.logi.com) and double-click to install. The Bridge starts automatically whenever the plugin loads.
+
+**Step 2 — Allow macOS permissions**
+
+On first button press, macOS asks for permissions for `node`. **Click "Allow"** — this enables keyboard simulation and screenshot capture.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/memetcircus/mxkiro-mac/main/assets/node_permission.png" alt="Allow node to control System Events" width="400">
+</p>
+
+**Step 3 — Assign buttons**
+
+Open Logi Options+ → your MX Creative Console → Actions tab → drag actions from the **Kirocan for Mac** category onto your buttons.
+
+**Done.** Press any button and Kiro responds — no setup scripts.
+
+> Optional: iPhone Record needs `ffmpeg` (`brew install ffmpeg`) and a one-time iPhone Shortcut. See [iPhone Record Setup](#iphone-record-setup-optional).
+
+### Prerequisites (.lplug4 install)
+
+- macOS
+- [Kiro IDE](https://kiro.dev)
+- [Logitech MX Creative Console](https://www.logitech.com/products/keyboards/mx-creative-console.html)
+- [Logi Options+](https://www.logitech.com/software/logi-options-plus.html)
+
+## LCD Button Layout (Recommended)
+
+**Page 1 — Snippets & Controls (9 buttons, animated):**
+
+Buttons must be assigned in this exact order for ghost animation tiles to align correctly:
+
+| | Col 1 | Col 2 | Col 3 |
+|---|-------|-------|-------|
+| Row 1 | Screen Capture (tile 0) | Be Honest (tile 1) | Don't Code Yet (tile 2) |
+| Row 2 | Show Options (tile 3) | Explain Why (tile 4) | Stop (tile 5) |
+| Row 3 | Keep Short (tile 6) | No Tests (tile 7) | Go! (tile 8) |
+
+**Page 2 — Utility Controls (no animation):**
+- New Session
+- Struct Prompt
+- Inline Chat
+- Terminal → Chat
+- Screen Record
+- Ask Kiro
+- iPhone Record
+- Start Spec
+- Git Commit
+
+**Page 3 — Prompt Commands (9 buttons, animated):**
+
+Each button sends a prompt about the active file. Must be in this order for animation:
+
+| | Col 1 | Col 2 | Col 3 |
+|---|-------|-------|-------|
+| Row 1 | Criticize (tile 0) | Refactor (tile 1) | Write Tests (tile 2) |
+| Row 2 | Explain (tile 3) | Fix Bug (tile 4) | Optimize (tile 5) |
+| Row 3 | Review (tile 6) | Document (tile 7) | Simplify (tile 8) |
+
+**Dial:** Session Navigate (18 notch threshold)
+**Roller:** Assign Logi native action (Volume, Zoom, etc.)
+
+## Session Health Indicator
+
+The ghost animation reflects Kiro's actual context window usage, read from IDE session files:
+
+| Usage | Ghost | Meaning |
+|-------|-------|---------|
+| 0-60% | Normal 👻 | Healthy working range |
+| 60-75% | Worried 😰 | Session getting long, context filling up |
+| 75%+ | On Fire 🔥 | Start a new session — auto-summarization imminent |
+
+Kiro auto-summarizes at 80%, so the fire animation warns you **before** context loss occurs.
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| "node" in macOS Privacy settings | This is the Kirocan Bridge service. It needs Accessibility and Screen Recording permissions to send keystrokes and capture screenshots. |
+| Bridge not responding | Check: `curl -s http://localhost:9848/health`. If offline, restart Logi (the plugin auto-spawns the Bridge on load): `pkill -f LogiPluginService; sleep 4; open -a logioptionsplus` |
+| Plugin not loading | Restart Logi: `pkill -f LogiPluginService; sleep 4; open -a logioptionsplus` |
+| Non-ASCII characters garbled | Known Kiro/Electron clipboard bug when copying FROM Kiro chat. Non-English characters (ö, ü, ñ, é, etc.) get corrupted. Works fine when copying from other apps (browser, Notes, VS Code). |
+
+## iPhone Record Setup (Optional)
+
+The iPhone Record button lets you capture video from your iPhone and have frames automatically extracted and pasted into Kiro chat. Useful for recording physical screens, whiteboards, or devices.
+
+**Quick install:** [Download "Kiro Record" Shortcut](https://www.icloud.com/shortcuts/77cf9e0d6118431d99fcb7f955b2cc55) → Open on iPhone → Change `Akifs-Mac-mini.local` to your Mac's hostname.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/memetcircus/mxkiro-mac/main/assets/Kiro_Record_Shortcut.png" alt="Kiro Record Shortcut configuration" width="300">
+</p>
+
+**Manual Shortcut setup:**
+
+1. Open **Shortcuts** app on iPhone
+2. Create a new Shortcut named "Kiro Record"
+3. Add these actions:
+   - **Record Video** (back camera, ~5 seconds)
+   - **Get Contents of URL**: `http://YOUR-MAC.local:9849/receive-photo`, Method: POST, Body: File (video)
+   - **Show Notification**: "Sent to Kiro!"
+4. Replace `YOUR-MAC.local` with your Mac's hostname (shown in notification when you press the button)
+5. Add Shortcut to Home Screen widget or Action Button for quick access
+
+**Network:** iPhone and Mac must be on the same Wi-Fi network.
+
+**First use:** Allow incoming connections for `node` when macOS firewall dialog appears.
+
+## Known Limitations
+
+- **macOS only** — relies on AppleScript and CGEvent for IDE interaction
+- **Clipboard trade-off** — prompts and screenshots use clipboard for paste
+- **Non-ASCII clipboard** — clipboard copy from Kiro chat corrupts non-English characters (Kiro/Electron bug)
+- **Multi-session animation** — when multiple sessions are active, animation reflects any working session
+- **Nested scroll areas** — CGEvent scroll targets element under cursor, can't reliably target chat panel only
+
+## License
+
+Apache License 2.0 — see [LICENSE](LICENSE) for details.
