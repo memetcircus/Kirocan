@@ -170,3 +170,19 @@ The iPhone Record button lets you capture video from your iPhone and have frames
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE) for details.
+
+## Support
+
+This page is the support and home page for **Kirocan for Mac** — the macOS plugin for the Logitech MX Creative Console and Kiro IDE. It is distinct from the Windows **Kirocan** plugin that this repository primarily hosts.
+
+The Mac plugin's source repository is private, so please report Mac-plugin issues by opening an issue in this Kirocan repo with a **`[Mac]`** prefix in the title, or by contacting the author directly.
+
+Contact: mehmetakifacar@gmail.com
+
+When reporting a bug, please include:
+
+- macOS version
+- Kiro IDE version
+- Logi Options+ version
+- Plugin version (shown in Logi Options+)
+- A short description with steps to reproduce
